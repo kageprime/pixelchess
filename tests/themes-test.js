@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 (async () => {
   const br = await chromium.launch(); const errs = []; let fails = 0;
   const ok = (n, c, x = '') => { if (!c) fails++; console.log((c ? 'ok   ' : 'FAIL ') + n + (c ? '' : '  ' + x)); };
-  const url = 'file://' + __dirname + '/pixel-chess.html';
+  const url = 'file://' + __dirname + '/../index.html';
   const mk = async (vp, init) => {
     const ctx = await br.newContext({ viewport: vp }); const pg = await ctx.newPage();
     pg.on('pageerror', e => errs.push(e.message));

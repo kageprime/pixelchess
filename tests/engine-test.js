@@ -1,6 +1,6 @@
 // Engine tests: perft (rules), SAN, pick() for both colours. Run: node engine-test.js
 const fs = require('fs');
-const html = fs.readFileSync(__dirname + '/pixel-chess.html', 'utf8');
+const html = fs.readFileSync(__dirname + '/../index.html', 'utf8');
 const code = html.split('/*ENG*/')[1].split('/*ENGEND*/')[0];
 const E = new Function(code + ';return{newBoard,apply,legal,all,inCheck,toSAN,pick,atk,threats}')();
 let fail = 0;

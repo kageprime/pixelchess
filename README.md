@@ -1,6 +1,19 @@
-Pixel Chess
+# Pixel Chess
 
-Open pixel-chess.html in a browser.
+Single-file pixel-art chess game. Open `index.html` in a browser, or deploy the repo root as a static site (Vercel needs no build step).
+
+## Tests
+
+```
+npm install
+npx playwright install chromium
+npm test
+```
+
+## Notes
+
+```
+Open index.html in a browser.
 node engine-test.js   rules (perft), SAN, CPU picks and personalities, music tables
 node smoke-test.js    phone-size browser smoke test
 node ladder-test.js   ladder, unlocks, undo limit, saving (blocked storage too)
@@ -15,3 +28,4 @@ Phase 3: wide-screen split layout (board left, info panel right), scene music, t
 Phase 4: living pieces (breathing, knight blinks, trembling when in danger, victory hop after big captures, zoom-in checkmate with the king toppling)
 Phase 5a/5b: saved profile (browser storage, safe when blocked), ladder (beat Mossback -> Lady Vex -> Old Dune), exhibition mode for locked opponents, 3 undos per ladder game, win streaks, best results, every finished ladder game stored with its full move list (ready for leaderboards)
 Phase 5c/5d: themes (4 boards, 3 piece sets, unlocked by beating opponents or win streaks, picked under THEMES on the title screen, applied over scene colours), local leaderboards under PROFILE (best streaks, fastest wins of 10+ moves, fewest moves to mate, records), top 5 per list saved on the device
+```
