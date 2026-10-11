@@ -127,6 +127,13 @@ eq('puzzles: 27 entries', ZB.PUZ.length, 27);
   eq('puzzle: missed day resets streak', [o.again, p.puz.streak, p.puz.best], [false, 1, 3]);
 }
 
+// --- blitz clocks: display format ---
+const BZ = new Function(html.split('/*BLZ*/')[1].split('/*BLZEND*/')[0].replace(/setInterval\(clockTick,250\);/, '') + ';return{fmtClock}')();
+eq('clock 3:00', BZ.fmtClock(180000), '3:00');
+eq('clock rounds up', BZ.fmtClock(179500), '3:00');
+eq('clock pads seconds', BZ.fmtClock(65000), '1:05');
+eq('clock clamps at zero', BZ.fmtClock(-200), '0:00');
+
 // --- threats: which pieces should tremble ---
 const T = f => [...E.threats(fen(f)[0])].sort();
 eq('no threats at the start', [...E.threats(E.newBoard())].length, 0);
