@@ -2,7 +2,7 @@
 const fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../index.html', 'utf8');
 const code = html.split('/*ENG*/')[1].split('/*ENGEND*/')[0];
-const E = new Function(code + ';return{newBoard,apply,legal,all,inCheck,toSAN,pick,atk,threats}')();
+const E = new Function(code + ';return{newBoard,apply,legal,all,inCheck,toSAN,pick,atk,threats,ev,gen,V}')();
 let fail = 0;
 const eq = (name, got, want) => { const ok = JSON.stringify(got) === JSON.stringify(want); if (!ok) fail++; console.log((ok ? 'ok   ' : 'FAIL ') + name + (ok ? '' : '  got ' + JSON.stringify(got) + ' want ' + JSON.stringify(want))); };
 
@@ -142,6 +142,38 @@ const RV = new Function(html.split('/*REV*/')[1].split('/*REVEND*/')[0] + ';retu
 eq('review: quiet move unmarked', RV.blunMark(0.4), '');
 eq('review: ?! at 2.5', RV.blunMark(2.5), '?!');
 eq('review: ?? at 6', RV.blunMark(9), '??');
+
+// --- tutor: every move gets a verdict tag plus plain-language reasons ---
+const TU = new Function('ev,atk,threats,legal,apply,gen,V,inCheck,all,prof,PW',
+  html.split('/*TUT*/')[1].split('/*TUTEND*/')[0] + ';return{explainPly}')(
+  E.ev, E.atk, E.threats, E.legal, E.apply, E.gen, E.V, E.inCheck, E.all, { tutor: 0 }, {});
+{
+  // scholar's mate, final blow: MATE with a reason
+  let b = E.newBoard();
+  const sans = play(b, 'w', ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6']);
+  for (const m of ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6']) {
+    const [r, c] = sq(m.slice(0, 2)), [y, x] = sq(m.slice(2, 4));
+    b = E.apply(b, r, c, y, x, m[4]);
+  }
+  const [r, c] = sq('h5'), [y, x] = sq('f7');
+  const nb = E.apply(b, r, c, y, x, undefined);
+  const e = TU.explainPly(b, { mv: [r, c, y, x], san: 'Qxf7#', t: 'w', cap: b[y][x] });
+  eq('tutor: mate tagged', [e.tag, e.why.length > 0], ['MATE', true]);
+  // hanging queen taken: BEST that takes the queen
+  const [fq] = fen('4k3/8/8/3q4/8/8/8/3QK3 w - -');
+  const qe = TU.explainPly(fq, { mv: [7, 3, 3, 3], san: 'Qxd5', t: 'w', cap: 'bQ' });
+  eq('tutor: queen take is best', [qe.tag, qe.why.join(' ').includes('queen')], ['BEST', true]);
+  // fool's mate g4: a real blunder with reasons
+  let f2 = E.newBoard();
+  for (const m of ['f2f3', 'e7e5']) {
+    const [rr, cc] = sq(m.slice(0, 2)), [yy, xx] = sq(m.slice(2, 4));
+    f2 = E.apply(f2, rr, cc, yy, xx, m[4]);
+  }
+  const [gr, gc] = sq('g2'), [gy, gx] = sq('g4');
+  const ge = TU.explainPly(f2, { mv: [gr, gc, gy, gx], san: 'g4', t: 'w', cap: null });
+  eq('tutor: g4 is a blunder', /BLUNDER|MISTAKE|INACCURACY/.test(ge.tag), true);
+  eq('tutor: blunder has reasons', ge.why.length > 0, true);
+}
 
 // --- threats: which pieces should tremble ---
 const T = f => [...E.threats(fen(f)[0])].sort();

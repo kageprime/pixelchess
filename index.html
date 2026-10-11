@@ -199,13 +199,14 @@ button:disabled{opacity:.35;pointer-events:none}
  <button class="big" id="rs">RESUME</button><button class="big" id="rt">RESTART</button>
  <div class="row"><button class="sm tsnd">SND ON</button><button class="sm tfx">FX ON</button></div>
  <div class="row"><button class="sm" id="vd" aria-label="Volume down">VOL -</button><span class="sm px" id="vv">70</span><button class="sm" id="vu" aria-label="Volume up">VOL +</button></div>
+ <div class="row"><button class="sm" id="tg">TUTOR: OFF</button></div>
  <button class="big" id="qt">QUIT TO MENU</button></div></div>
 <div class="scr dim" id="s-over"><div class="px card"><canvas id="oart" width="64" height="48"></canvas><h2 id="ot"></h2><p id="os"></p><p id="oq"></p><div id="ou"><canvas id="ouc" width="16" height="16"></canvas><span id="out"></span></div>
  <button class="big" id="nx">NEXT</button><button class="big" id="rm">REMATCH</button><button class="big" id="rv">REVIEW</button><button class="big" id="mn">MENU</button><button class="big" id="sh">SHARE</button></div></div>
-<div id="rev" aria-label="Game review"><div class="px" id="revbox"><span id="rvm">START</span><span><button class="sm" id="rvp">PREV</button><button class="sm" id="rvn">NEXT</button><button class="sm" id="rvx">EXIT</button></span></div></div>
+<div id="rev" aria-label="Game review"><div class="px" id="revbox"><span id="rvm">START</span><span><button class="sm" id="rvp">PREV</button><button class="sm" id="rvn">NEXT</button><button class="sm" id="rvy">WHY</button><button class="sm" id="rvr">REPLY</button><button class="sm" id="rvx">EXIT</button></span></div></div>
 <div class="scr dim" id="s-promo"><div class="px card"><h2>PROMOTE</h2><div class="row" id="pr"></div></div></div>
 <div class="scr dim" id="s-help"><div class="px card"><h2>HOW TO PLAY</h2>
- <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.</p>
+ <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.<br>TUTOR IN PAUSE EXPLAINS EVERY MOVE.</p>
  <button class="big" id="hb">BACK</button></div></div>
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
@@ -277,7 +278,7 @@ if(!atk(b,r,c,p[0]).length||Math.min(...a)<V[p[1]])s.add(r+','+c)}return s}
 /*PROF*/
 const OPP_ORDER=['moss','vex','dune'],PKEY='pixelchess.v1',MIN_FAST=10,TOPN=5;
 const THEME_REQ={board:{scene:null,midnight:{beat:'moss'},candy:{beat:'vex'},ember:{beat:'dune'},glacier:{streak:3}},piece:{classic:null,jade:{beat:'vex'},gold:{beat:'dune'},neon:{streak:5}}};
-const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU'});
+const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0});
 const nn=(x,d=0)=>Number.isFinite(x)&&x>=0?Math.floor(x):d;
 const LESS={fast:(e,x)=>e.ms<x.ms,mate:(e,x)=>e.moves<x.moves||(e.moves==x.moves&&e.ms<x.ms),streaks:(e,x)=>e.n>x.n};
 /* insert into a top list (best first, max TOPN). Returns the 1-based rank, or 0 if it did not make the list. */
@@ -310,6 +311,7 @@ if(p.bestStreak>p.streak)p.top.streaks.push({n:p.bestStreak,date:0})}
 if(o.theme&&typeof o.theme=='object')for(const k of['board','piece'])if(typeof o.theme[k]=='string'&&themeUnlocked(p,k,o.theme[k]))p.theme[k]=o.theme[k];
 p.vol=(typeof o.vol=='number'&&o.vol>=0&&o.vol<=1)?o.vol:.7;
 p.name=(typeof o.name=='string'?o.name:'YOU').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';
+p.tutor=o.tutor?1:0;
 return p}
 function saveProfile(st,p){try{st.setItem(PKEY,JSON.stringify(p));return true}catch(e){return false}}
 const isUnlocked=(p,id)=>p.unlocked.includes(id);
@@ -404,11 +406,64 @@ sel=null;moves=[];mateAnim=null;hop=null;pp=[];draw();
 const e=r.evals[r.i];
 $('rvm').textContent=r.i==0?'START':(hist[r.i-1].t=='w'?Math.ceil(r.i/2)+'. ':Math.ceil(r.i/2)+'... ')+r.sans[r.i-1]+r.marks[r.i-1]+' ('+(e>=0?'+':'')+e.toFixed(1)+')';
 $('rvp').disabled=r.i==0;$('rvn').disabled=r.i==n}
-function revStep(d){if(!rev)return;rev.i=Math.max(0,Math.min(rev.pos.length-1,rev.i+d));revShow()}
+function revStep(d){if(!rev)return;rev.i=Math.max(0,Math.min(rev.pos.length-1,rev.i+d));rev.reply=null;const rb=$('rvr');if(rb)rb.textContent='REPLY';revShow()}
 function revEnter(){if(!b||!hist.length)return;rev=revBuild();scr('s-over',0);$('rev').classList.add('on');revShow()}
 function revExit(){if(!rev)return;const s=rev.sv;rev=null;b=s.b;last=s.last;turn=s.turn;mateAnim=s.mateAnim;hop=s.hop;pp=[];sel=null;moves=[];
-$('rev').classList.remove('on');draw();scr('s-over',1)}
+const rb=$('rvr');if(rb)rb.textContent='REPLY';$('rev').classList.remove('on');draw();scr('s-over',1)}
 /*REVEND*/
+/*TUT*/
+let tutor=0;
+const PCN={P:'pawn',N:'knight',B:'bishop',R:'rook',Q:'queen',K:'king'};
+function explainPly(bb,h){const keep=PW;PW={};
+try{
+const mover=h.t,foe=mover=='w'?'b':'w',sgn=mover=='w'?1:-1;
+const[r,c,y,x]=h.mv,nb=apply(bb,r,c,y,x,h.pr||'Q');
+const eb=sgn*ev(bb)/10,ea=sgn*ev(nb)/10,sw=eb-ea;
+const mate=/#/.test(h.san),chk=/[+#]/.test(h.san);
+let best=-1e9,second=-1e9;
+for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){if(bb[rr][cc]&&bb[rr][cc][0]==mover){for(const m of legal(bb,rr,cc)){
+const t2=bb[m[0]][m[1]];if(t2&&t2[1]=='K')continue;
+const v=sgn*ev(apply(bb,rr,cc,m[0],m[1],'Q'))/10;if(v>best){second=best;best=v}else if(v>second)second=v}}}
+let tag,why=[];
+if(mate)tag='MATE';
+else{let mated=false;
+for(let rr=0;rr<8&&!mated;rr++)for(let cc=0;cc<8&&!mated;cc++){if(nb[rr][cc]&&nb[rr][cc][0]==foe){for(const m of legal(nb,rr,cc)){
+const t2=nb[m[0]][m[1]];if(t2&&t2[1]=='K')continue;const na=apply(nb,rr,cc,m[0],m[1],'Q');
+if(inCheck(na,mover)&&all(na,mover).length===0){mated=true;break}}}}
+if(mated){tag='BLUNDER ??';why.push('allows mate in 1')}
+else if(sw>=6)tag='BLUNDER ??';
+else if(sw>=2.5)tag='MISTAKE ?!';
+else if(!h.cap&&ea>=best-0.3&&(best-second)>=2.5&&eb<5&&eb>-2)tag='BRILLIANT!';
+else if(ea>=best-0.15)tag='BEST';
+else if(sw>=1)tag='INACCURACY';
+else tag='GOOD'}
+if(mate)why.push('delivers checkmate');
+else if(chk)why.push('gives check');
+if(h.cap&&h.cap[1]!='K')why.push('takes the '+PCN[h.cap[1]]+' ('+V[h.cap[1]]+')');
+if(h.cap&&h.cap[1]=='K')why.push('takes the king? illegal!');
+if(bb[r][c][1]=='K'&&Math.abs(x-c)==2)why.push('castles to safety');
+if(bb[r][c][1]=='P'&&(y==0||y==7))why.push('promotes the pawn');
+const danger=b=>{const s=new Set();for(const k of threats(b)){const[rr,cc]=k.split(',').map(Number);if(b[rr][cc]&&b[rr][cc][0]==mover)s.add(k+':'+b[rr][cc][1])}return s};
+const d0=danger(bb),d1=danger(nb);
+for(const k of d1)if(!d0.has(k)){const t=k.split(':')[1];why.push('hangs the '+PCN[t]);break}
+for(const k of d0)if(!d1.has(k)){const t=k.split(':')[1];why.push('covers the '+PCN[t]);break}
+if(bb[r][c][1]=='P'&&Math.abs(y-r)==2&&((mover=='w'&&(y==4||y==3))||(mover=='b'&&(y==3||y==4))))why.push('takes the center');
+if((bb[r][c][1]=='N'||bb[r][c][1]=='B')&&((mover=='w'&&r==7)||(mover=='b'&&r==0)))why.push('develops the '+PCN[bb[r][c][1]]);
+let eye=null;for(const t of gen(nb,y,x)){const q=nb[t[0]][t[1]];if(q&&q[0]==foe&&q[1]!='K'&&(!eye||V[q[1]]>V[eye[1]]))eye=q}
+if(eye)why.push('eyes the '+PCN[eye[1]]+' ('+V[eye[1]]+')');
+return{tag,why:why.slice(0,3),sw,ea}}finally{PW=keep}}
+function coachMove(bb,h){try{const e=explainPly(bb,h);$('bub').classList.add('on');bubText(e.tag+(e.why.length?': '+e.why[0]:''),1)}catch(_){}}
+function revExplain(){const r=rev;if(!r||!r.i)return null;
+if(!r.expl)r.expl={};if(!r.expl[r.i])r.expl[r.i]=explainPly(r.pos[r.i-1],hist[r.i-1]);return r.expl[r.i]}
+function revWhy(){const e=revExplain();if(!e)return;bubText(e.tag.toUpperCase()+(e.why.length?' - '+e.why.join(' / '):''),1)}
+function revReply(){const r=rev;if(!r||!r.i)return;
+if(r.reply){b=r.pos[r.i];draw();r.reply=null;$('rvr').textContent='REPLY';return}
+const e=revExplain(),nb=r.pos[r.i],foe=hist[r.i-1].t=='w'?'b':'w';
+let m;try{m=pick(nb,1,foe,150)}catch(_){m=null}if(!m)return;
+const after=apply(nb,m[0],m[1],m[2],m[3],'Q');
+b=after;last=[[m[0],m[1]],[m[2],m[3]]];draw();r.reply=1;$('rvr').textContent='BACK';
+bubText('REPLY: '+toSAN(nb,m[0],m[1],m[2],m[3],'Q',after).toUpperCase()+(e?' - PUNISHES '+e.tag.toUpperCase():''),1)}
+/*TUTEND*/
 /*NET*/
 async function postScore(s){try{
 if(location.protocol.indexOf('http')!=0||!navigator.onLine)return null;
@@ -486,6 +541,7 @@ if(over&&chkCol&&fx)for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(b[rr][cc]==
 if(cp&&V[cp[1]]>=3&&fx&&!over){hop={r:y,c:x,t0:performance.now()};sfx('taunt')}
 draw();kick();
 if(gmode=='puzzle'){puzAfter();return}
+if(tutor&&gmode!='puzzle')coachMove(bb,hist[hist.length-1]);
 if(!over&&ai&&turn=='b')setTimeout(aiMove,60)}
 function kingFx(big){for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]==chkCol+'K'){const cx=c*20+10,cy=r*20+10;
 ringBurst(cx,cy,['#e8433a','#ffd23f','#fff'],big?26:14,big?2:1.4);if(big){ringBurst(cx,cy,['#ffd23f','#fff'],18,1)}}
@@ -899,7 +955,7 @@ function bubText(t,idle){clearInterval(typT);clearTimeout(bubT);const e=$('bt');
 if(idle){e.textContent=t;return}
 let i=0;e.textContent='';typT=setInterval(()=>{e.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(typT)},22);
 bubT=setTimeout(()=>{if(inGame&&ai)bubText(opp.tag,1)},2600+t.length*45)}
-function say(key,ex,pri,prob){if(!inGame||!ai||!opp.say[key])return;if(prob!=null&&Math.random()>prob)return;
+function say(key,ex,pri,prob){if(tutor||!inGame||!ai||!opp.say[key])return;if(prob!=null&&Math.random()>prob)return;
 if(sayQ&&sayQ.pri>=pri)return;sayQ={key,ex,pri};clearTimeout(sayT);sayT=setTimeout(flushSay,0)}
 function flushSay(){const q=sayQ;sayQ=null;if(!q||!inGame||!ai)return;const L=opp.say[q.key];let t;do{t=L[Math.random()*L.length|0]}while(t==lastLine&&L.length>1);
 lastLine=t;lastSay=Date.now();bubText(t);curEx=q.ex;exUntil=Date.now()+2400;drawPt()}
@@ -973,7 +1029,8 @@ Q('.tlvl').forEach(e=>e.onclick=()=>{lvl=(lvl+1)%3;Q('.tlvl').forEach(x=>x.textC
 Q('.tsnd').forEach(e=>e.onclick=()=>{snd=!snd;Q('.tsnd').forEach(x=>x.textContent=snd?'SND ON':'SND OFF');if(snd){au();sfx('move');if(inGame&&scn)musStart(scn)}else musStop(true)});
 Q('.tfx').forEach(e=>e.onclick=()=>{fx=!fx;Q('.tfx').forEach(x=>x.textContent=fx?'FX ON':'FX OFF')});
 $('vd').onclick=()=>{au();setVol(VOL-.1)};$('vu').onclick=()=>{au();setVol(VOL+.1)};$('vv').textContent=Math.round(VOL*100);
-$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
+$('tg').onclick=()=>{tutor=tutor?0:1;prof.tutor=tutor;saveProfile(store,prof);$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF')};tutor=prof.tutor?1:0;$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF');
+$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvy').onclick=revWhy;$('rvr').onclick=revReply;$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
 $('hp').onclick=()=>scr('s-help',1);$('hb').onclick=()=>scr('s-help',0);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('keydown',e=>{if(e.key=='Escape'||e.key=='p'){paused?resume():pause()}else if(e.key=='u')undo();else if(e.key=='h')getHint()});
