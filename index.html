@@ -188,7 +188,7 @@ button:disabled{opacity:.35;pointer-events:none}
  <div class="row"><button class="sm tsnd">SND ON</button><button class="sm tfx">FX ON</button></div>
  <button class="big" id="qt">QUIT TO MENU</button></div></div>
 <div class="scr dim" id="s-over"><div class="px card"><canvas id="oart" width="64" height="48"></canvas><h2 id="ot"></h2><p id="os"></p><p id="oq"></p><div id="ou"><canvas id="ouc" width="16" height="16"></canvas><span id="out"></span></div>
- <button class="big" id="nx">NEXT</button><button class="big" id="rm">REMATCH</button><button class="big" id="mn">MENU</button></div></div>
+ <button class="big" id="nx">NEXT</button><button class="big" id="rm">REMATCH</button><button class="big" id="mn">MENU</button><button class="big" id="sh">SHARE</button></div></div>
 <div class="scr dim" id="s-promo"><div class="px card"><h2>PROMOTE</h2><div class="row" id="pr"></div></div></div>
 <div class="scr dim" id="s-help"><div class="px card"><h2>HOW TO PLAY</h2>
  <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.</p>
@@ -624,6 +624,22 @@ else if(lastOut.res=='l')L.push('STREAK LOST');else L.push('DRAW - STREAK KEPT A
 $('out').innerHTML=L.join('<br>');ou.classList.add('on');
 if(unl){portrait(ouc.getContext('2d'),unl,'h',false);ouc.classList.add('on');nx.textContent='NEXT: '+unl.name;nx.classList.add('on')}}
 scr('s-over',1);sfx(unl?'unlock':mate&&(w=='w'||!ai)?'win':'lose')}
+/* ---- share card: snapshot the result + board as a PNG, share or download ---- */
+async function shareCard(silent){if(!b)return null;
+try{
+const S=3,BW=160*S,HH=64,cn=document.createElement('canvas');cn.width=BW;cn.height=HH+160*S;const g=cn.getContext('2d');g.imageSmoothingEnabled=false;
+g.fillStyle='#fff3d1';g.fillRect(0,0,cn.width,cn.height);g.fillStyle='#2a1d14';g.fillRect(0,0,cn.width,4);g.fillRect(0,HH+160*S-4,cn.width,4);
+g.fillStyle='#e8433a';g.font='16px "Press Start 2P",monospace';g.textAlign='center';
+g.fillText(($('ot')&&$('s-over').classList.contains('on')?$('ot').textContent:'PIXEL CHESS').slice(0,20),BW/2,26);
+g.fillStyle='#2a1d14';g.font='8px "Press Start 2P",monospace';
+g.fillText(($('os')&&$('s-over').classList.contains('on')?$('os').textContent:'').slice(0,34)+'  '+Math.ceil(hist.length/2)+' MOVES',BW/2,48);
+try{g.drawImage(cv,0,HH,BW,160*S)}catch(e){}
+if(silent)return cn.toDataURL('image/png');
+const blob=await new Promise(r=>cn.toBlob(r,'image/png'));if(!blob)return null;
+const f=new File([blob],'pixelchess.png',{type:'image/png'});
+if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Pixel Chess'});return 'shared'}
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pixelchess.png';document.body.appendChild(a);a.click();
+setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);return 'saved'}catch(e){return null}}
 /* ---- pixel art for title / game-over ---- */
 const A=$('art').getContext('2d'),O=$('oart').getContext('2d');
 function sp2(c,p,X,Y){const rows=SPR[p[1]];c.fillStyle='rgba(0,0,0,.28)';c.fillRect(X+3,Y+17,14,2);c.fillRect(X+5,Y+19,10,1);blit(c,p,X+2,Y+18-rows.length)}
@@ -806,7 +822,7 @@ $('th').onclick=()=>{scr('s-title',0);renderThemes();scr('s-themes',1)};$('thb')
 $('pf').onclick=()=>{scr('s-title',0);renderProf();scr('s-prof',1)};$('pfb').onclick=()=>{scr('s-prof',0);scr('s-title',1)};
 /* ---- wiring ---- */
 Q('[data-m]').forEach(e=>e.onclick=()=>+e.dataset.m==1?showOpp():startGame(2));
-$('ob').onclick=()=>{scr('s-opp',0);scr('s-title',1)};$('ex').onclick=()=>{exh=!exh;renderOpp()};$('nx').onclick=()=>{const o=OPPS[OPP_ORDER.indexOf(opp.id)+1];if(o)startGame(1,o,false)};
+$('ob').onclick=()=>{scr('s-opp',0);scr('s-title',1)};$('ex').onclick=()=>{exh=!exh;renderOpp()};$('nx').onclick=()=>{const o=OPPS[OPP_ORDER.indexOf(opp.id)+1];if(o)startGame(1,o,false)};$('sh').onclick=()=>shareCard();
 Q('.tlvl').forEach(e=>e.onclick=()=>{lvl=(lvl+1)%3;Q('.tlvl').forEach(x=>x.textContent='CPU: '+['EASY','NORMAL','HARD'][lvl])});
 Q('.tsnd').forEach(e=>e.onclick=()=>{snd=!snd;Q('.tsnd').forEach(x=>x.textContent=snd?'SND ON':'SND OFF');if(snd){au();sfx('move');if(inGame&&scn)musStart(scn)}else musStop(true)});
 Q('.tfx').forEach(e=>e.onclick=()=>{fx=!fx;Q('.tfx').forEach(x=>x.textContent=fx?'FX ON':'FX OFF')});
