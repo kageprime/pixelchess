@@ -125,6 +125,9 @@ eq('puzzles: 27 entries', ZB.PUZ.length, 27);
   eq('puzzle: same-day solve keeps streak', [o.again, p.puz.streak, p.puz.wins], [true, 3, 3]);
   o = ZB.recordPuzzle(p, '2026-10-12', false);
   eq('puzzle: missed day resets streak', [o.again, p.puz.streak, p.puz.best], [false, 1, 3]);
+  const qp = { puz: { streak: 0, best: 0, last: '', wins: 0 }, xp: 0 };
+  ZB.recordPuzzle(qp, '2026-10-10', true);
+  eq('puzzle solve gives 25 XP', qp.xp, 25);
 }
 
 // --- blitz clocks: display format ---
@@ -152,7 +155,7 @@ eq('queen attacked by a defended bishop trembles', T('4k3/8/8/3q4/8/5B2/8/4K3 b 
 eq('kings never tremble', T('4k3/8/8/8/8/8/4q3/4K3 w - -').includes('7,4'), false);
 
 // --- profile / ladder rules ---
-const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ}')();
+const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle}')();
 const mem = () => { const d = {}; return { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d }; };
 const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies: 41, ms: 90000, caps: 3, left: 9, undos: 0, san: 'e4', date: 1 }, o);
 {
@@ -178,6 +181,16 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
   eq('beating Lady Vex unlocks Old Dune', [o.unlocked, P.isUnlocked(p, 'dune')], ['dune', true]);
   o = P.recordResult(p, R('dune', 'w'));
   eq('beating Old Dune clears the ladder once', [o.cleared, o.unlocked], [true, null]);
+  eq('clearing unlocks secret NOX', [o.bonus, P.isUnlocked(p, 'nox')], ['nox', true]);
+  eq('ladder XP: win 100', p.xp >= 400, true);
+  eq('rank titles', [P.xpTitle(0), P.xpTitle(199), P.xpTitle(200), P.xpTitle(2000)], ['PAWN', 'PAWN', 'KNIGHT', 'PIXEL KING']);
+  {
+    const q = P.newProfile(); q.xp = 150;
+    const r = P.recordResult(q, R('moss', 'w'));
+    eq('crossing 200 XP ranks up', [q.xp, r.rankUp], [250, 'KNIGHT']);
+    const l = P.recordResult(P.newProfile(), R('moss', 'l'));
+    eq('loss gives 10 XP, no rank up', [l.rankUp], [null]);
+  }
   o = P.recordResult(p, R('dune', 'w'));
   eq('ladder cleared only reported the first time', o.cleared, false);
   for (let i = 0; i < 120; i++) P.recordResult(p, R('moss', 'w'));
