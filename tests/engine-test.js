@@ -2,7 +2,7 @@
 const fs = require('fs');
 const html = fs.readFileSync(__dirname + '/../index.html', 'utf8');
 const code = html.split('/*ENG*/')[1].split('/*ENGEND*/')[0];
-const E = new Function(code + ';return{newBoard,apply,legal,all,inCheck,toSAN,pick,atk,threats}')();
+const E = new Function(code + ';return{newBoard,apply,legal,all,inCheck,toSAN,pick,atk,threats,ev,gen,V}')();
 let fail = 0;
 const eq = (name, got, want) => { const ok = JSON.stringify(got) === JSON.stringify(want); if (!ok) fail++; console.log((ok ? 'ok   ' : 'FAIL ') + name + (ok ? '' : '  got ' + JSON.stringify(got) + ' want ' + JSON.stringify(want))); };
 
@@ -93,6 +93,88 @@ for (const [id, M] of Object.entries(MU.MUS)) {
   eq(`music ${id}: valid pattern chars`, [M.lead, M.bass, M.perc].every(p => /^[0-9.\-kx]+$/.test(p)), true);
 }
 
+// --- daily puzzles: every entry is a genuine mate-in-1 with no king captures ---
+const ZB = new Function('const BUS={on(){}};' + html.split('/*PUZ*/')[1].split('/*PUZEND*/')[0] + ';return{PUZ,fenParse,recordPuzzle,puzIdx}')();
+eq('puzzles: 27 entries', ZB.PUZ.length, 27);
+{
+  const bad = [];
+  ZB.PUZ.forEach((f, i) => {
+    const [b, side] = ZB.fenParse(f), col = side, oc = col === 'w' ? 'b' : 'w';
+    if (E.inCheck(b, col)) { bad.push(i + ': solver in check'); return; }
+    if (E.inCheck(b, oc)) { bad.push(i + ': opponent in check'); return; }
+    let mates = 0;
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      if (b[r][c] && b[r][c][0] === col) for (const m of E.legal(b, r, c)) {
+        const t = b[m[0]][m[1]];
+        if (t && t[1] === 'K' && t[0] !== col) { bad.push(i + ': king capture available'); return; }
+        const nb = E.apply(b, r, c, m[0], m[1]);
+        if (E.inCheck(nb, oc) && E.all(nb, oc).length === 0) mates++;
+      }
+    }
+    if (!mates) bad.push(i + ': no mate in 1');
+  });
+  eq('puzzles: all genuine mate-in-1, no king captures', bad, []);
+  const days = new Set(ZB.PUZ.map((_, i) => i));
+  eq('puzzles: index covers all entries', days.size, ZB.PUZ.length);
+}
+{
+  const p = { puz: { streak: 2, best: 2, last: '2026-10-09', wins: 2 } };
+  let o = ZB.recordPuzzle(p, '2026-10-10', true);
+  eq('puzzle: next-day solve extends streak', [o.again, p.puz.streak, p.puz.best, p.puz.wins], [false, 3, 3, 3]);
+  o = ZB.recordPuzzle(p, '2026-10-10', true);
+  eq('puzzle: same-day solve keeps streak', [o.again, p.puz.streak, p.puz.wins], [true, 3, 3]);
+  o = ZB.recordPuzzle(p, '2026-10-12', false);
+  eq('puzzle: missed day resets streak', [o.again, p.puz.streak, p.puz.best], [false, 1, 3]);
+  const qp = { puz: { streak: 0, best: 0, last: '', wins: 0 }, xp: 0 };
+  ZB.recordPuzzle(qp, '2026-10-10', true);
+  eq('puzzle solve gives 25 XP', qp.xp, 25);
+}
+
+// --- blitz clocks: display format ---
+const BZ = new Function(html.split('/*BLZ*/')[1].split('/*BLZEND*/')[0].replace(/setInterval\(clockTick,250\);/, '') + ';return{fmtClock}')();
+eq('clock 3:00', BZ.fmtClock(180000), '3:00');
+eq('clock rounds up', BZ.fmtClock(179500), '3:00');
+eq('clock pads seconds', BZ.fmtClock(65000), '1:05');
+eq('clock clamps at zero', BZ.fmtClock(-200), '0:00');
+
+// --- review: blunder marks from eval swing (pawns, mover's view) ---
+const RV = new Function(html.split('/*REV*/')[1].split('/*REVEND*/')[0] + ';return{blunMark}')();
+eq('review: quiet move unmarked', RV.blunMark(0.4), '');
+eq('review: ?! at 2.5', RV.blunMark(2.5), '?!');
+eq('review: ?? at 6', RV.blunMark(9), '??');
+
+// --- tutor: every move gets a verdict tag plus plain-language reasons ---
+const TU = new Function('ev,atk,threats,legal,apply,gen,V,inCheck,all,prof,PW',
+  html.split('/*TUT*/')[1].split('/*TUTEND*/')[0] + ';return{explainPly}')(
+  E.ev, E.atk, E.threats, E.legal, E.apply, E.gen, E.V, E.inCheck, E.all, { tutor: 0 }, {});
+{
+  // scholar's mate, final blow: MATE with a reason
+  let b = E.newBoard();
+  const sans = play(b, 'w', ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6']);
+  for (const m of ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6']) {
+    const [r, c] = sq(m.slice(0, 2)), [y, x] = sq(m.slice(2, 4));
+    b = E.apply(b, r, c, y, x, m[4]);
+  }
+  const [r, c] = sq('h5'), [y, x] = sq('f7');
+  const nb = E.apply(b, r, c, y, x, undefined);
+  const e = TU.explainPly(b, { mv: [r, c, y, x], san: 'Qxf7#', t: 'w', cap: b[y][x] });
+  eq('tutor: mate tagged', [e.tag, e.why.length > 0], ['MATE', true]);
+  // hanging queen taken: BEST that takes the queen
+  const [fq] = fen('4k3/8/8/3q4/8/8/8/3QK3 w - -');
+  const qe = TU.explainPly(fq, { mv: [7, 3, 3, 3], san: 'Qxd5', t: 'w', cap: 'bQ' });
+  eq('tutor: queen take is best', [qe.tag, qe.why.join(' ').includes('queen')], ['BEST', true]);
+  // fool's mate g4: a real blunder with reasons
+  let f2 = E.newBoard();
+  for (const m of ['f2f3', 'e7e5']) {
+    const [rr, cc] = sq(m.slice(0, 2)), [yy, xx] = sq(m.slice(2, 4));
+    f2 = E.apply(f2, rr, cc, yy, xx, m[4]);
+  }
+  const [gr, gc] = sq('g2'), [gy, gx] = sq('g4');
+  const ge = TU.explainPly(f2, { mv: [gr, gc, gy, gx], san: 'g4', t: 'w', cap: null });
+  eq('tutor: g4 is a blunder', /BLUNDER|MISTAKE|INACCURACY/.test(ge.tag), true);
+  eq('tutor: blunder has reasons', ge.why.length > 0, true);
+}
+
 // --- threats: which pieces should tremble ---
 const T = f => [...E.threats(fen(f)[0])].sort();
 eq('no threats at the start', [...E.threats(E.newBoard())].length, 0);
@@ -105,7 +187,7 @@ eq('queen attacked by a defended bishop trembles', T('4k3/8/8/3q4/8/5B2/8/4K3 b 
 eq('kings never tremble', T('4k3/8/8/8/8/8/4q3/4K3 w - -').includes('7,4'), false);
 
 // --- profile / ladder rules ---
-const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ}')();
+const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle}')();
 const mem = () => { const d = {}; return { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d }; };
 const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies: 41, ms: 90000, caps: 3, left: 9, undos: 0, san: 'e4', date: 1 }, o);
 {
@@ -131,6 +213,26 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
   eq('beating Lady Vex unlocks Old Dune', [o.unlocked, P.isUnlocked(p, 'dune')], ['dune', true]);
   o = P.recordResult(p, R('dune', 'w'));
   eq('beating Old Dune clears the ladder once', [o.cleared, o.unlocked], [true, null]);
+  eq('clearing unlocks secret NOX', [o.bonus, P.isUnlocked(p, 'nox')], ['nox', true]);
+  eq('ladder XP: win 100', p.xp >= 400, true);
+  eq('rank titles', [P.xpTitle(0), P.xpTitle(199), P.xpTitle(200), P.xpTitle(2000)], ['PAWN', 'PAWN', 'KNIGHT', 'PIXEL KING']);
+  {
+    const q = P.newProfile(); q.xp = 150;
+    const r = P.recordResult(q, R('moss', 'w'));
+    eq('crossing 200 XP ranks up', [q.xp, r.rankUp], [250, 'KNIGHT']);
+    const l = P.recordResult(P.newProfile(), R('moss', 'l'));
+    eq('loss gives 10 XP, no rank up', [l.rankUp], [null]);
+  }
+  eq('fresh profile name', P.newProfile().name, 'YOU');
+  {
+    const d = {};
+    const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
+    P.saveProfile(st, P.newProfile());
+    st.d[P.PKEY] = JSON.stringify({ v: 1, name: 'A!@#verylongname123' });
+    eq('name sanitised on load', P.loadProfile(st).name, 'Averylongnam');
+    const l = P.recordResult(P.newProfile(), R('moss', 'l'));
+    eq('loss files finished streak', l.streakFiled >= 0, true);
+  }
   o = P.recordResult(p, R('dune', 'w'));
   eq('ladder cleared only reported the first time', o.cleared, false);
   for (let i = 0; i < 120; i++) P.recordResult(p, R('moss', 'w'));

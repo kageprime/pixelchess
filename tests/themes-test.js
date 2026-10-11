@@ -34,7 +34,7 @@ const { chromium } = require('playwright');
     await pg.click('#thb');
     ok(name + ' back to title', await pg.locator('#s-title.on').count() === 1);
     await pg.click('#pf');
-    ok(name + ' profile opens on RECORD with 4 tabs', (await pg.locator('#ptabs button').count()) === 4 && (await pg.locator('#ptabs button.on').innerText()) === 'RECORD');
+    ok(name + ' profile opens on RECORD with 5 tabs', (await pg.locator('#ptabs button').count()) === 5 && (await pg.locator('#ptabs button.on').innerText()) === 'RECORD');
     ok(name + ' profile: locked opponents hidden', (await pg.locator('#pbody').innerText()).includes('???'));
     await pg.click('#ptabs button:nth-child(2)');
     ok(name + ' streak tab empty state', /NO STREAKS YET/.test(await pg.locator('#pbody').innerText()));
