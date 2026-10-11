@@ -93,6 +93,40 @@ for (const [id, M] of Object.entries(MU.MUS)) {
   eq(`music ${id}: valid pattern chars`, [M.lead, M.bass, M.perc].every(p => /^[0-9.\-kx]+$/.test(p)), true);
 }
 
+// --- daily puzzles: every entry is a genuine mate-in-1 with no king captures ---
+const ZB = new Function('const BUS={on(){}};' + html.split('/*PUZ*/')[1].split('/*PUZEND*/')[0] + ';return{PUZ,fenParse,recordPuzzle,puzIdx}')();
+eq('puzzles: 27 entries', ZB.PUZ.length, 27);
+{
+  const bad = [];
+  ZB.PUZ.forEach((f, i) => {
+    const [b, side] = ZB.fenParse(f), col = side, oc = col === 'w' ? 'b' : 'w';
+    if (E.inCheck(b, col)) { bad.push(i + ': solver in check'); return; }
+    if (E.inCheck(b, oc)) { bad.push(i + ': opponent in check'); return; }
+    let mates = 0;
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      if (b[r][c] && b[r][c][0] === col) for (const m of E.legal(b, r, c)) {
+        const t = b[m[0]][m[1]];
+        if (t && t[1] === 'K' && t[0] !== col) { bad.push(i + ': king capture available'); return; }
+        const nb = E.apply(b, r, c, m[0], m[1]);
+        if (E.inCheck(nb, oc) && E.all(nb, oc).length === 0) mates++;
+      }
+    }
+    if (!mates) bad.push(i + ': no mate in 1');
+  });
+  eq('puzzles: all genuine mate-in-1, no king captures', bad, []);
+  const days = new Set(ZB.PUZ.map((_, i) => i));
+  eq('puzzles: index covers all entries', days.size, ZB.PUZ.length);
+}
+{
+  const p = { puz: { streak: 2, best: 2, last: '2026-10-09', wins: 2 } };
+  let o = ZB.recordPuzzle(p, '2026-10-10', true);
+  eq('puzzle: next-day solve extends streak', [o.again, p.puz.streak, p.puz.best, p.puz.wins], [false, 3, 3, 3]);
+  o = ZB.recordPuzzle(p, '2026-10-10', true);
+  eq('puzzle: same-day solve keeps streak', [o.again, p.puz.streak, p.puz.wins], [true, 3, 3]);
+  o = ZB.recordPuzzle(p, '2026-10-12', false);
+  eq('puzzle: missed day resets streak', [o.again, p.puz.streak, p.puz.best], [false, 1, 3]);
+}
+
 // --- threats: which pieces should tremble ---
 const T = f => [...E.threats(fen(f)[0])].sort();
 eq('no threats at the start', [...E.threats(E.newBoard())].length, 0);
