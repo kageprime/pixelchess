@@ -89,6 +89,18 @@ const server = http.createServer((req, res) => {
     ok('SOON cards never navigate (click, Enter, Space)', pg.url() === before, pg.url());
     await pg.locator('.card').nth(3).focus();
     ok('SOON cards are keyboard focusable', await pg.evaluate(() => document.activeElement.dataset.game) === 'shogi');
+    await pg.reload();
+    ok('chess card has default focus on load', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
+    await pg.keyboard.press('ArrowDown');
+    ok('arrow key moves focus to the next card', await pg.evaluate(() => document.activeElement.dataset.game) === 'ayo');
+    await pg.keyboard.press('ArrowUp');
+    ok('arrow key moves focus back', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
+    ok('footer hints name the controls', /SELECT/.test(await pg.locator('.ft').innerText()) && /ENTER/.test(await pg.locator('.ft').innerText()));
+    await pg.locator('.card').first().focus();
+    await pg.keyboard.press('Enter');
+    await pg.waitForURL('**/chess/index.html');
+    ok('Enter opens the focused game', (await pg.title()).length > 0);
+    await pg.goto(base);
 
     // profile data from chess shows in the header
     await pg.evaluate(() => localStorage.setItem('pixelchess.v1', JSON.stringify({ v: 1, streak: 4, bestStreak: 9, total: { w: 5, l: 1, d: 0 }, rec: { moss: { w: 5, l: 1, d: 0 } }, xp: 120 })));
