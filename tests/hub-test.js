@@ -90,13 +90,16 @@ const server = http.createServer((req, res) => {
     await pg.locator('.card').nth(3).focus();
     ok('SOON cards are keyboard focusable', await pg.evaluate(() => document.activeElement.dataset.game) === 'shogi');
     await pg.reload();
-    ok('chess card has default focus on load', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
+    ok('no default focus steal on load', await pg.evaluate(() => document.activeElement === document.body));
+    await pg.click('#start');
+    await pg.waitForTimeout(600);
+    ok('PRESS START focuses the first cabinet', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
     await pg.keyboard.press('ArrowDown');
     ok('arrow key moves focus to the next card', await pg.evaluate(() => document.activeElement.dataset.game) === 'ayo');
     await pg.keyboard.press('ArrowUp');
     ok('arrow key moves focus back', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
+    ok('hint line describes the focused cabinet', /CHESS/.test(await pg.locator('#hint').innerText()));
     ok('footer hints name the controls', /SELECT/.test(await pg.locator('.ft').innerText()) && /ENTER/.test(await pg.locator('.ft').innerText()));
-    await pg.locator('.card').first().focus();
     await pg.keyboard.press('Enter');
     await pg.waitForURL('**/chess/index.html');
     ok('Enter opens the focused game', (await pg.title()).length > 0);
@@ -144,20 +147,13 @@ const server = http.createServer((req, res) => {
     await pg.reload();
     ok('chip derives initials from the name', (await pg.textContent('#ci')) === 'KPA');
 
-    // cabinet nav model: START scrolls + focuses, arrows walk the grid, hint describes
+    // SOON cabinets never start anything via keyboard either
     await pg.click('#start');
     await pg.waitForTimeout(600);
-    ok('PRESS START focuses the first cabinet', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
     await pg.keyboard.press('ArrowRight');
-    ok('arrow moves across the row', await pg.evaluate(() => document.activeElement.dataset.game) === 'ayo');
-    ok('hint describes the focused cabinet', /AYO/.test(await pg.locator('#hint').innerText()));
     await pg.keyboard.press('Enter');
     await pg.waitForTimeout(300);
     ok('Enter on a SOON cabinet stays put', (await pg.evaluate(() => document.activeElement.dataset.game)) === 'ayo' && !pg.url().includes('ayo'));
-    await pg.locator('.card').first().focus();
-    await pg.keyboard.press('Enter');
-    await pg.waitForURL('**/chess/index.html');
-    ok('Enter on a PLAYABLE cabinet opens it', (await pg.title()).length > 0);
     await pg.goto(base);
 
     const real = errs.filter(e => !(!fontThere && /PressStart2P|woff2|404/.test(e)) && !/fonts\.googleapis|fonts\.gstatic|ERR_FAILED|ERR_NAME|ERR_INTERNET|ERR_CONNECTION/.test(e));

@@ -227,15 +227,6 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
   a.addEventListener('click',e=>{if(a.classList.contains('soon')){e.preventDefault();return}S.blip(660)});
   a.addEventListener('keydown',e=>{if(a.classList.contains('soon')&&(e.key==='Enter'||e.key===' '))e.preventDefault()});
  });
- const focusables=()=>[...document.querySelectorAll('a.card,#snd')];
- document.addEventListener('keydown',e=>{
-  if(e.key!=='ArrowDown'&&e.key!=='ArrowRight'&&e.key!=='ArrowUp'&&e.key!=='ArrowLeft')return;
-  const f=focusables(),i=f.indexOf(document.activeElement);
-  e.preventDefault();
-  (f[(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+f.length)%f.length]||f[0]).focus();
-  S.blip(440)});
- const first=document.querySelector('a.card:not(.soon)');
- if(first)first.focus({preventScroll:true});
  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 })();
 </script>
