@@ -26,7 +26,7 @@
   function rank(xp) {
     let i = 0; while (i + 1 < RANKS.length && xp >= RANKS[i + 1][0]) i++;
     const nx = RANKS[i + 1];
-    return { title: RANKS[i][1], min: RANKS[i][0], next: nx ? nx[0] : null };
+    return { title: RANKS[i][1], min: RANKS[i][0], next: nx ? nx[0] : null, nextTitle: nx ? nx[1] : null };
   }
   function changed() { try { g.dispatchEvent(new CustomEvent('shared:profile')); } catch (e) {} }
 

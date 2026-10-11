@@ -38,7 +38,7 @@ const server = http.createServer((req, res) => {
   {
     const ctx = await browser.newContext(), pg = await ctx.newPage();
     await pg.goto(base);
-    const urls = await pg.evaluate(() => [...document.querySelectorAll('a[href],link[href],script[src]')].map(e => e.href || e.src));
+    const urls = (await pg.evaluate(() => [...document.querySelectorAll('a[href],link[href],script[src]')].map(e => e.href || e.src))).filter(u => !u.startsWith('data:'));
     const codes = await Promise.all(urls.map(async u => [u, (await ctx.request.get(u)).status()]));
     ok('all links, styles and scripts on the hub resolve (' + urls.length + ')', codes.every(c => c[1] === 200), codes.filter(c => c[1] !== 200));
     const pool = await ctx.request.get(base + 'pool/index.html');
@@ -110,6 +110,8 @@ const server = http.createServer((req, res) => {
     const rg = await pg.evaluate(() => [Shared.recordGame('pool', true), Shared.recordGame('pool', true), Shared.recordGame('pool', false), Shared.recordGame('nope', true)]);
     ok('recordGame keeps wins, losses, streak and best', rg[2].w === 2 && rg[2].l === 1 && rg[2].streak === 0 && rg[2].best === 2 && rg[3] === null, rg);
     ok('pool card shows STREAK 0 · BEST 2 after those games', (await pg.textContent('#best-pool')) === 'STREAK 0 \u00b7 BEST 2', await pg.textContent('#best-pool'));
+    await pg.evaluate(() => Shared.recordGame('scrabble', true));
+    ok('scrabble card shows its streak too', (await pg.textContent('#best-scrabble')) === 'STREAK 1 \u00b7 BEST 1', await pg.textContent('#best-scrabble'));
     const raw2 = await pg.evaluate(() => JSON.parse(localStorage.getItem('pixelchess.v1')));
     ok('recordGame leaves xp and chess fields alone', raw2.xp === 320 && raw2.streak === 4 && raw2.byGame.pool.xp === 200, raw2);
     await pg.evaluate(() => localStorage.removeItem('pixelchess.v1')); await pg.reload();
@@ -123,17 +125,28 @@ const server = http.createServer((req, res) => {
     ok('sound choice survives a reload', (await pg.textContent('#snd')) === 'SOUND: OFF');
     await pg.click('#snd');
 
-    // floor look: marquee strip, lit chess cabinet, initials chip
-    ok('marquee strip names the ritual', /ONE CREDIT A DAY/.test(await pg.locator('.top-strip').innerText()));
+    // floor look: ticker marquee, lit chess cabinet, initials chip
+    ok('ticker names the new games', /PIXEL POOL 3D/.test(await pg.locator('.tick').innerText()));
     ok('chess cabinet is lit', await pg.evaluate(() => document.querySelector('[data-game="chess"]').classList.contains('lit')));
     await pg.evaluate(() => localStorage.setItem('pixelchess.v1', JSON.stringify({ v: 1, name: 'Kage Prime' })));
     await pg.reload();
     ok('chip derives initials from the name', (await pg.textContent('#ci')) === 'KPA');
 
-    // chess link works
-    await pg.locator('.card').first().click();
+    // cabinet nav model: START scrolls + focuses, arrows walk the grid, hint describes
+    await pg.click('#start');
+    await pg.waitForTimeout(600);
+    ok('PRESS START focuses the first cabinet', await pg.evaluate(() => document.activeElement.dataset.game) === 'chess');
+    await pg.keyboard.press('ArrowRight');
+    ok('arrow moves across the row', await pg.evaluate(() => document.activeElement.dataset.game) === 'ayo');
+    ok('hint describes the focused cabinet', /AYO/.test(await pg.locator('#hint').innerText()));
+    await pg.keyboard.press('Enter');
+    await pg.waitForTimeout(300);
+    ok('Enter on a SOON cabinet stays put', (await pg.evaluate(() => document.activeElement.dataset.game)) === 'ayo' && !pg.url().includes('ayo'));
+    await pg.locator('.card').first().focus();
+    await pg.keyboard.press('Enter');
     await pg.waitForURL('**/chess/index.html');
-    ok('Chess card opens the chess game', (await pg.title()).length > 0 && (await pg.$('#cv')) !== null);
+    ok('Enter on a PLAYABLE cabinet opens it', (await pg.title()).length > 0);
+    await pg.goto(base);
 
     const real = errs.filter(e => !(!fontThere && /PressStart2P|woff2|404/.test(e)) && !/fonts\.googleapis|fonts\.gstatic|ERR_FAILED|ERR_NAME|ERR_INTERNET|ERR_CONNECTION/.test(e));
     ok('no console errors or page errors' + (fontThere ? '' : ' (ignoring the not-yet-vendored font 404)'), real.length === 0 && pageErrs.length === 0, { real, pageErrs });
