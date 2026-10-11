@@ -17,6 +17,17 @@ eq('streak range', api.validateScore({ name: 'A', board: 'streak', value: 0, pli
 eq('streak ok', api.validateScore({ name: 'A', board: 'streak', value: 7, plies: 1, ms: 1, undos: 0, san: '' }), null);
 eq('undos capped', api.validateScore({ ...good, undos: 4 }), 'bad undos');
 eq('san too long', api.validateScore({ ...good, san: 'x'.repeat(4001) }), 'bad san');
+const lad = { name: 'Kage', board: 'ladder:global', value: 1250, pid: 'a1b2c3d4', wins: 12 };
+eq('ladder valid', api.validateScore(lad), null);
+eq('ladder bad pid', api.validateScore({ ...lad, pid: 'xyz' }), 'bad pid');
+eq('ladder bad xp', api.validateScore({ ...lad, value: -5 }), 'bad xp');
+eq('ladder bad board', api.validateScore({ ...lad, board: 'ladder:Mars' }), 'bad board');
+eq('region NG', api.regionFor('ng'), 'Africa');
+eq('region US', api.regionFor('US'), 'Americas');
+eq('region JP', api.regionFor('jp'), 'Asia');
+eq('region DE', api.regionFor('de'), 'Europe');
+eq('region AU', api.regionFor('au'), 'Oceania');
+eq('region unknown', api.regionFor('XX'), 'Global');
 
 // handler with stubbed Upstash + env
 process.env.KV_REST_API_URL = 'https://x';
@@ -47,6 +58,33 @@ const res = () => { const r = {}; r.status = (c) => (r.code = c, r); r.json = (o
   r = res();
   await api({ method: 'POST', body: { ...good, value: -5, ms: -5 }, headers: {} }, r);
   eq('POST invalid', r.code, 400);
+  // ladder POST files global + regional + player hash
+  const seen = [];
+  global.fetch = async (url, init) => {
+    seen.push(String(url));
+    const u = String(url);
+    if (u.includes('/incr/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/expire/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/hset/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/zadd/') || u.includes('/zremrangebyrank/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/zrevrank/')) return { ok: true, json: async () => ({ result: 6 }) };
+    return { ok: true, json: async () => ({ result: 1 }) };
+  };
+  r = res();
+  await api({ method: 'POST', body: lad, headers: { 'x-vercel-ip-country': 'NG' } }, r);
+  eq('POST ladder rank+region', [r.code, r.body], [200, { ok: true, rank: 7, region: 'Africa' }]);
+  eq('POST ladder touched regional + hash', seen.some(u => u.includes('ladder%3AAfrica')) && seen.some(u => u.includes('/hset/pc:player:a1b2c3d4')), true);
+  // ladder GET with who + pipeline names
+  global.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.includes('/pipeline')) return { ok: true, json: async () => (JSON.parse(init.body).map((c, i) => ({ result: ['name', 'P' + i, 'xp', String(900 - i * 10), 'updated', '1'] }))) };
+    if (u.includes('/zrevrank/')) return { ok: true, json: async () => ({ result: 9 }) };
+    if (u.includes('/zrevrange/')) return { ok: true, json: async () => ({ result: ['p0', 'p1', 'p2'] }) };
+    return { ok: true, json: async () => ({ result: 1 }) };
+  };
+  r = res();
+  await api({ method: 'GET', query: { board: 'ladder:global', who: 'a1b2c3d4' }, headers: { 'x-vercel-ip-country': 'NG' } }, r);
+  eq('GET ladder view', [r.code, r.body.ok, r.body.region, r.body.you.rank, r.body.top.length, r.body.top[0].n], [200, true, 'Africa', 10, 3, 'P0']);
   // rate limited
   global.fetch = async (url) => {
     if (String(url).includes('/incr/')) return { ok: true, json: async () => ({ result: 99 }) };

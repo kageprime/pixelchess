@@ -278,7 +278,8 @@ if(!atk(b,r,c,p[0]).length||Math.min(...a)<V[p[1]])s.add(r+','+c)}return s}
 /*PROF*/
 const OPP_ORDER=['moss','vex','dune'],PKEY='pixelchess.v1',MIN_FAST=10,TOPN=5;
 const THEME_REQ={board:{scene:null,midnight:{beat:'moss'},candy:{beat:'vex'},ember:{beat:'dune'},glacier:{streak:3}},piece:{classic:null,jade:{beat:'vex'},gold:{beat:'dune'},neon:{streak:5}}};
-const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0});
+const mkPid=()=>{let s='';for(let i=0;i<8;i++)s+='0123456789abcdef'[Math.random()*16|0];return s};
+const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0,pid:mkPid()});
 const nn=(x,d=0)=>Number.isFinite(x)&&x>=0?Math.floor(x):d;
 const LESS={fast:(e,x)=>e.ms<x.ms,mate:(e,x)=>e.moves<x.moves||(e.moves==x.moves&&e.ms<x.ms),streaks:(e,x)=>e.n>x.n};
 /* insert into a top list (best first, max TOPN). Returns the 1-based rank, or 0 if it did not make the list. */
@@ -312,6 +313,7 @@ if(o.theme&&typeof o.theme=='object')for(const k of['board','piece'])if(typeof o
 p.vol=(typeof o.vol=='number'&&o.vol>=0&&o.vol<=1)?o.vol:.7;
 p.name=(typeof o.name=='string'?o.name:'YOU').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';
 p.tutor=o.tutor?1:0;
+p.pid=(typeof o.pid=='string'&&/^[0-9a-f]{8}$/.test(o.pid))?o.pid:mkPid();
 return p}
 function saveProfile(st,p){try{st.setItem(PKEY,JSON.stringify(p));return true}catch(e){return false}}
 const isUnlocked=(p,id)=>p.unlocked.includes(id);
@@ -474,12 +476,27 @@ if(location.protocol.indexOf('http')!=0||!navigator.onLine)return;
 const base={name:prof.name||'YOU',plies:rec.plies,ms:rec.ms,undos:rec.undos,san:rec.san,opp:rec.id,date:rec.date};
 if(out.ranks.time)postScore({...base,board:'fast:'+rec.id,value:rec.ms});
 if(out.ranks.moves)postScore({...base,board:'mate:'+rec.id,value:Math.max(1,Math.ceil(rec.plies/2))});
-if(out.streakFiled>0)postScore({...base,board:'streak',value:out.streakFiled,plies:1,ms:1}) }catch(e){}}
-async function loadWorld(){const defs=[['streak','BEST STREAKS']];
-for(const o of OPPS)defs.push(['fast:'+o.id,o.name+' FASTEST'],['mate:'+o.id,o.name+' FEWEST']);
+if(out.streakFiled>0)postScore({...base,board:'streak',value:out.streakFiled,plies:1,ms:1});
+postScore({name:prof.name||'YOU',board:'ladder:global',value:prof.xp|0,pid:prof.pid,wins:prof.total.w})}catch(e){}}
+async function loadWorld(){const on=navigator.onLine!==false;
 let h='';
+if(on){try{
+const r=await fetch('api/scores?board=ladder:global&who='+prof.pid);const j=await r.json();
+if(j&&j.ok){const y=j.you||{rank:-1},nx=RANKS.find(m=>m[0]>(prof.xp||0));
+const above=((y.near||[]).filter(e=>e.pid!=prof.pid&&e.v>(prof.xp||0))[0]);
+h+='<div class="px ps"><h3>YOUR CLIMB</h3>'+
+(y.rank>0?ln('GLOBAL RANK','#'+y.rank+' - '+(prof.xp||0)+' XP'):ln('GLOBAL RANK','UNRANKED - FINISH A LADDER GAME'))+
+(nx?ln('NEXT RANK',nx[1]+' - '+(nx[0]-(prof.xp||0))+' XP TO GO'):ln('NEXT RANK','PIXEL KING FOREVER'))+
+(above?ln('NEXT RIVAL',above.n+' - '+(above.v-(prof.xp||0))+' XP AHEAD'):'')+'</div>';
+const rows=top=>(top||[]).map((e,i)=>ln((i+1)+'. '+e.n,e.v+' XP')).join('')||'<div class="ln"><span>EMPTY - BE THE FIRST</span></div>';
+h+='<div class="px ps"><h3>GLOBAL TOP 10</h3>'+rows(j.top)+'</div>';
+if(j.region&&j.region!='Global')h+='<div class="px ps"><h3>'+j.region.toUpperCase()+' TOP 10</h3>'+rows(j.rtop)+'</div>';
+}else throw 0}catch(e){h+='<div class="px ps"><h3>YOUR CLIMB</h3><div class="ln"><span>WORLD OFFLINE</span></div></div>'}}
+else h+='<div class="px ps"><h3>YOUR CLIMB</h3><div class="ln"><span>OFFLINE - LOCAL ONLY</span></div></div>';
+const defs=[['streak','BEST STREAKS']];
+for(const o of OPPS)defs.push(['fast:'+o.id,o.name+' FASTEST'],['mate:'+o.id,o.name+' FEWEST']);
 for(const[bd,title]of defs){let rows='';
-try{if(location.protocol.indexOf('http')!=0||!navigator.onLine)throw 0;
+try{if(!on)throw 0;
 const r=await fetch('api/scores?board='+encodeURIComponent(bd));const j=await r.json();
 const top=(j&&j.top||[]).slice(0,3);
 rows=top.length?top.map((e,i)=>ln((i+1)+'. '+e.n,bd=='streak'?e.v+' WINS':bd[0]=='f'?fmtT(e.v):e.v+' MOVES')).join(''):'<div class="ln"><span>NO WORLD SCORES YET</span></div>';

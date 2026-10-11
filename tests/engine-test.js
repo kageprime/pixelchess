@@ -233,6 +233,14 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
     const l = P.recordResult(P.newProfile(), R('moss', 'l'));
     eq('loss files finished streak', l.streakFiled >= 0, true);
   }
+  eq('pid is 8 hex chars', /^[0-9a-f]{8}$/.test(P.newProfile().pid), true);
+  {
+    const p = P.newProfile();
+    const d = {};
+    const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
+    P.saveProfile(st, p);
+    eq('pid survives a reload', P.loadProfile(st).pid, p.pid);
+  }
   o = P.recordResult(p, R('dune', 'w'));
   eq('ladder cleared only reported the first time', o.cleared, false);
   for (let i = 0; i < 120; i++) P.recordResult(p, R('moss', 'w'));
