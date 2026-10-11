@@ -213,7 +213,7 @@ button:disabled{opacity:.35;pointer-events:none}
 </div>
 <div class="scr" id="s-opp"><h2>CHOOSE OPPONENT</h2><p id="osm"></p><div id="ol"></div><div class="row"><button class="sm" id="ex">EXHIBITION: OFF</button><button class="sm" id="bz">BLITZ: OFF</button><button class="sm" id="ob">BACK</button></div></div>
 <div class="scr" id="s-net"><div class="px card"><h2>ONLINE</h2><p id="netmsg">HOST OR JOIN A FRIEND. FREE, PEER TO PEER.</p><div class="row"><input id="netcode" maxlength="4" placeholder="CODE" aria-label="Room code" autocomplete="off"></div><div class="row"><button class="sm" id="neth">HOST</button><button class="sm" id="netj">JOIN</button><button class="sm" id="bz2">BLITZ: OFF</button></div><div class="row"><button class="sm" id="netb">BACK</button></div></div></div>
-<div class="scr" id="s-themes"><div class="pane"><h2>THEMES</h2><p class="lab">BOARD</p><div class="tg" id="tb"></div><p class="lab">PIECES</p><div class="tg" id="tp"></div><button class="sm" id="thb">BACK</button></div></div>
+<div class="scr" id="s-themes"><div class="pane"><h2>THEMES</h2><p class="lab">BOARD</p><div class="tg" id="tb"></div><p class="lab">PIECES</p><div class="tg" id="tp"></div><p class="lab">FINISHERS</p><div class="tg" id="tf"></div><button class="sm" id="thb">BACK</button></div></div>
 <div class="scr" id="s-prof"><div class="pane"><h2>PROFILE</h2><div class="row tabs" id="ptabs"></div><div id="pbody"></div><button class="sm" id="pfb">BACK</button></div></div>
 <div class="scr dim" id="s-pause"><div class="px card"><h2>PAUSED</h2>
  <button class="big" id="rs">RESUME</button><button class="big" id="rt">RESTART</button>
@@ -226,7 +226,7 @@ button:disabled{opacity:.35;pointer-events:none}
 <div id="rev" aria-label="Game review"><div class="px" id="revbox"><span id="rvm">START</span><span><button class="sm" id="rvp">PREV</button><button class="sm" id="rvn">NEXT</button><button class="sm" id="rvy">WHY</button><button class="sm" id="rvr">REPLY</button><button class="sm" id="rvx">EXIT</button></span></div></div>
 <div class="scr dim" id="s-promo"><div class="px card"><h2>PROMOTE</h2><div class="row" id="pr"></div></div></div>
 <div class="scr dim" id="s-help"><div class="px card"><h2>HOW TO PLAY</h2>
- <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.<br>TUTOR IN PAUSE EXPLAINS EVERY MOVE.</p>
+ <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.<br>TUTOR IN PAUSE EXPLAINS EVERY MOVE.<br>FINISHERS UNLOCK AS YOU WIN - EQUIP THEM UNDER THEMES.</p>
  <button class="big" id="hb">BACK</button></div></div>
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
@@ -303,7 +303,7 @@ const mkInitials=(name)=>{name=String(name||'').toUpperCase().replace(/[^A-Z0-9 
 let s=name.split(/\s+/).map(w=>w[0]).join('');const w0=s;
 if(s.length<3){const flat=name.replace(/\s+/g,'');for(const ch of flat){if(s.length>=3)break;if(!s.includes(ch))s+=ch}
 while(s.length<3)s+=w0[s.length%w0.length]}return s.slice(0,3)};
-const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0,pid:mkPid(),initials:''});
+const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0,pid:mkPid(),initials:'',fin:{eq:{P:'base',N:'base',B:'base',R:'base',Q:'base',K:'base'}}});
 const nn=(x,d=0)=>Number.isFinite(x)&&x>=0?Math.floor(x):d;
 const LESS={fast:(e,x)=>e.ms<x.ms,mate:(e,x)=>e.moves<x.moves||(e.moves==x.moves&&e.ms<x.ms),streaks:(e,x)=>e.n>x.n};
 /* insert into a top list (best first, max TOPN). Returns the 1-based rank, or 0 if it did not make the list. */
@@ -312,6 +312,15 @@ function themeUnlocked(p,kind,id){const t=THEME_REQ[kind];if(!t||!(id in t))retu
 if(q.beat)return !!(p.rec[q.beat]&&p.rec[q.beat].w>0);if(q.streak)return p.bestStreak>=q.streak;return false}
 const themeKeys=p=>{const o=[];for(const k in THEME_REQ)for(const id in THEME_REQ[k])if(themeUnlocked(p,k,id))o.push(k+':'+id);return o};
 function setTheme(p,kind,id){if(!themeUnlocked(p,kind,id))return false;p.theme[kind]=id;return true}
+const FIN_REQ={P:{beat:'vex',name:'QUICK DRAW'},N:{beat:'moss',name:'METEOR DIVE'},B:{streak:3,name:'PRISM SPLIT'},R:{beat:'dune',name:'CANNON'},Q:{streak:5,name:'STORM'},K:{clear:true,name:'EXECUTION'}};
+const FIN_PIECE={P:'PAWN',N:'KNIGHT',B:'BISHOP',R:'ROOK',Q:'QUEEN',K:'KING'};
+function finUnlocked(p,t){const q=FIN_REQ[t];if(!q)return false;
+if(q.beat)return !!(p.rec[q.beat]&&p.rec[q.beat].w>0);
+if(q.streak)return p.bestStreak>=q.streak;
+if(q.clear)return !!(p.rec.dune&&p.rec.dune.w>0);return false}
+function finKeys(p){const o=[];for(const t in FIN_REQ)if(finUnlocked(p,t))o.push(t);return o}
+function setFin(p,t,id){if(id!='base'&&!finUnlocked(p,t))return false;p.fin.eq[t]=id=='alt'?'alt':'base';return true}
+const finReqText=q=>!q?'':q.beat?'BEAT '+OPPS[OPP_ORDER.indexOf(q.beat)].name:q.streak?q.streak+' WIN STREAK':'CLEAR THE LADDER';
 function cleanTop(a,kind){if(!Array.isArray(a))return[];const o=[];
 for(const e of a){if(!e||typeof e!='object')continue;
 if(kind=='fast'&&Number.isFinite(e.ms)&&e.ms>0)o.push({ms:Math.floor(e.ms),plies:nn(e.plies),undos:nn(e.undos),date:nn(e.date)});
@@ -325,6 +334,7 @@ if(o.rec&&typeof o.rec=='object')for(const id of OPP_ORDER){const r=o.rec[id];if
 if(o.total&&typeof o.total=='object')p.total={w:nn(o.total.w),l:nn(o.total.l),d:nn(o.total.d)};
 p.streak=nn(o.streak);p.bestStreak=Math.max(nn(o.bestStreak),p.streak);p.xp=nn(o.xp);
 if(o.puz&&typeof o.puz=='object')p.puz={streak:nn(o.puz.streak),best:Math.max(nn(o.puz.best),nn(o.puz.streak)),last:typeof o.puz.last=='string'?o.puz.last.slice(0,10):'',wins:nn(o.puz.wins)};
+for(const t of['P','N','B','R','Q','K'])p.fin.eq[t]=(o.fin&&o.fin.eq&&o.fin.eq[t]=='alt'&&finUnlocked(p,t))?'alt':'base';
 if(Array.isArray(o.games))p.games=o.games.filter(g=>g&&typeof g=='object'&&OPP_ORDER.includes(g.id)&&'wld'.includes(g.res)).slice(0,100);
 if(o.top&&typeof o.top=='object'){for(const id of OPP_ORDER){const f=cleanTop(o.top.fast&&o.top.fast[id],'fast'),m=cleanTop(o.top.mate&&o.top.mate[id],'mate');if(f.length)p.top.fast[id]=f;if(m.length)p.top.mate[id]=m}
 p.top.streaks=cleanTop(o.top.streaks,'streaks')}
@@ -349,10 +359,10 @@ function streakBoard(p){const L=[];for(const e of p.top.streaks)ins(L,{n:e.n,dat
 /* r: {id,res:'w'|'l'|'d',mate,plies,ms,caps,left,undos,san,date}. Returns what changed. */
 const RANKS=[[0,'PAWN'],[200,'KNIGHT'],[500,'BISHOP'],[900,'ROOK'],[1400,'QUEEN'],[2000,'PIXEL KING']];
 const xpTitle=x=>{let t=RANKS[0][1];for(const[m,n]of RANKS)if(x>=m)t=n;return t};
-function recordResult(p,r){const before=themeKeys(p);const rc=p.rec[r.id]||(p.rec[r.id]={w:0,l:0,d:0});rc[r.res]++;p.total[r.res]++;
+function recordResult(p,r){const before=themeKeys(p);const finBefore=finKeys(p);const rc=p.rec[r.id]||(p.rec[r.id]={w:0,l:0,d:0});rc[r.res]++;p.total[r.res]++;
 const oldRank=xpTitle(p.xp||0);
 p.xp=(p.xp||0)+(r.res=='w'?100:r.res=='d'?30:10);
-const out={unlocked:null,cleared:false,bonus:null,rankUp:null,streakFiled:0,newBest:[],ranks:{time:0,moves:0},themes:[]};
+const out={unlocked:null,cleared:false,bonus:null,rankUp:null,streakFiled:0,newBest:[],ranks:{time:0,moves:0},themes:[],finishers:[]};
 if(xpTitle(p.xp)!=oldRank)out.rankUp=xpTitle(p.xp);
 if(r.res=='w'){p.streak++;if(p.streak>p.bestStreak)p.bestStreak=p.streak;
 const i=OPP_ORDER.indexOf(r.id),nx=OPP_ORDER[i+1];
@@ -367,6 +377,7 @@ else if(r.res=='l'){out.streakFiled=p.streak;if(p.streak>0)ins(p.top.streaks,{n:
 p.games.unshift({id:r.id,res:r.res,plies:r.plies,ms:r.ms,caps:r.caps,left:r.left,undos:r.undos,date:r.date,san:r.san});
 if(p.games.length>100)p.games.length=100;
 out.themes=themeKeys(p).filter(k=>!before.includes(k)).map(k=>{const q=k.split(':');return{kind:q[0],id:q[1]}});
+out.finishers=finKeys(p).filter(t=>!finBefore.includes(t));
 return out}
 /*PROFEND*/
 /*PUZ*/
@@ -894,6 +905,33 @@ if(t<180){const k=cl(t/180);return[lp(a.F[0],m[0],k),lp(a.F[1],m[1],k),0]}const 
 burst:a=>{for(let i=0;i<7;i++)a.parts.push({x:a.T[0]+10,y:a.T[1]+10,vx:(Math.random()-.5)*3,vy:-Math.random()*2,g:.1,col:i%2?'#ffd23f':'#fff',life:320,age:0,sz:1})}},
 Q:{dur:860,ti:340,mag:4,cues:[[0,'zap'],[300,'zap']],mv:(t,a)=>mvL(a,(t-600)/160,0,t<300&&Math.floor(t/60)%2==0),ov:ovQ},
 K:{dur:880,ti:280,mag:5,big:1,cues:[[0,'whoosh'],[280,'thud']],mv:(t,a)=>{const k=cl(t/280);return mvL(a,k,Math.round(10*Math.sin(Math.PI*k)))},ov:ovK}};
+const ovPslash=(t,a)=>{const cx=a.T[0]+10,cy=a.T[1]+10;
+if(t>=140&&t<320){for(let i=0;i<3;i++){const k=cl((t-140-i*45)/80),x0=a.T[0]+2+14*k;ln(x0,a.T[1]+2,x0+14*(1-k),a.T[1]+18,'#fff',2);ln(x0,a.T[1]+2,x0+14*(1-k),a.T[1]+18,'#ffd23f',1)}}
+if(t>=300&&t<380)px(a.T[0]+4,a.T[1]+4,12,12,'#fff')};
+const ovNmet=(t,a)=>{const cx=a.T[0]+10,cy=a.T[1]+10;
+if(t<420){const k=cl(t/420),mx=lp(a.F[0],a.T[0],k),my=lp(a.F[1],a.T[1],k)-(1-k)*70;
+for(let i=0;i<6;i++)px(mx+8-i*2,my-4-i*6,2,2,i%2?'#ff7a2a':'#ffd23f')}
+else{ring(cx,cy,4+(t-420)/240*16,12,'#ff7a2a',2,.5);if(t<500)px(a.T[0]+6,a.T[1]+6,8,8,'#fff')}};
+const ovBpri=(t,a)=>{const cx=a.T[0]+10,cy=a.T[1]+10,bx=a.F[0]+10,by=a.F[1]+10;
+if(t<420){const cols=['#7ff0ff','#ff3fa4','#ffe14d'];for(let i=0;i<3;i++){const o=(i-1)*4;ln(bx+o,by,cx+o,cy,cols[i],1)}}
+else if(t<560)ring(cx,cy,3+(t-420)/140*12,16,'#fff',1,.5)};
+const ovRcan=(t,a)=>{const bx=a.F[0]+10,by=a.F[1]+10,cx=a.T[0]+10,cy=a.T[1]+10;
+if(t<140){px(bx-3,by-3,7,7,'#fff');px(bx-5,by-2,11,3,'#ffd23f');if(Math.floor(t/20)%2==0)dust(a,bx,by)}
+else if(t>=380&&t<520)ring(cx,cy,5+(t-380)/140*14,14,'#ffd23f',2,.5)};
+const ovQstm=(t,a)=>{const bx=a.F[0]+10,by=a.F[1]+10,cx=a.T[0]+10,cy=a.T[1]+10,s=Math.floor(t/45);
+if(t<340){for(let b=0;b<3;b++){let x=bx+(b-1)*4,y=by;for(let i=1;i<=5;i++){const k=i/5,nx=lp(bx,cx,k)+(rnd(s*7+i+b*13)-.5)*10,ny=lp(by,cy,k);ln(x,y,nx,ny,i%2?'#fff':'#7ff0ff',1);x=nx;y=ny}}}
+else if(t<460){px(cx-8,cy-8,17,17,'#fff');ring(cx,cy,6+(t-340)/120*16,18,'#7ff0ff',2,.5)}};
+const ovKexe=(t,a)=>{const cx=a.T[0]+10,cy=a.T[1]+10;
+if(t<280)ring(cx,cy,2+t/280*10,16,'#ffd23f',1,.5);
+else{ring(cx,cy,4+(t-280)/200*20,20,'#ffd23f',2,.5);ring(cx,cy,4+(t-280)/200*14,14,'#e8433a',2,.5);if(t<420)px(cx-6,cy-14,13,12,'#fff')}};
+const FIN={
+P:{alt:{dur:380,ti:160,mag:2,cues:[[0,'whoosh'],[160,'slash']],mv:FX.P.mv,ov:ovPslash}},
+N:{alt:{dur:760,ti:420,mag:3,cues:[[0,'whoosh'],[420,'crash']],mv:FX.N.mv,ov:ovNmet}},
+B:{alt:{dur:900,ti:440,mag:2,cues:[[0,'tick'],[140,'tick'],[280,'tick'],[420,'shot']],mv:FX.B.mv,ov:ovBpri}},
+R:{alt:{dur:700,ti:380,mag:6,big:1,cues:[[0,'shot'],[380,'thud']],mv:FX.R.mv,ov:ovRcan}},
+Q:{alt:{dur:860,ti:340,mag:4,cues:[[0,'zap'],[200,'crash']],mv:FX.Q.mv,ov:ovQstm}},
+K:{alt:{dur:880,ti:280,mag:6,big:1,cues:[[0,'whoosh'],[280,'crash']],mv:FX.K.mv,ov:ovKexe}}};
+const finCfg=t=>{const e=prof.fin&&prof.fin.eq&&prof.fin.eq[t];return(e=='alt'&&FIN[t]&&FIN[t].alt)?FIN[t].alt:FX[t]};
 function fxLayer(){const a=an,t=a.te,cfg=a.cfg;
 if(!a.hit)spr(a.v,a.T[0],a.T[1],t>cfg.ti-110&&Math.floor(t/45)%2==0);
 const[mx,my,jp,fl]=a.mp=cfg.mv(t,a);sh(mx,my);spr(a.p,mx,my-(jp||0),fl);cfg.ov(t,a);
@@ -904,7 +942,7 @@ rows.forEach((row,y)=>{for(let x=0;x<16;x++){const ch=row[x];if(ch!='.'&&Math.ra
 a.mag=a.cfg.mag;if(a.t=='Q')a.fl=90;if(a.cfg.burst)a.cfg.burst(a);
 ringBurst(a.T[0]+10,a.T[1]+12,['#fff','#ffd23f','#e8433a'],big?20:12,big?1.9:1.4);flash=Math.max(flash,big?110:60);
 sfx('crash');buzz(big?40:25)}
-function startAnim(r1,c1,r2,c2,done){sel=null;moves=[];const p=b[r1][c1],v=b[r2][c2],t=p[1],cfg=FX[t];
+function startAnim(r1,c1,r2,c2,done){sel=null;moves=[];const p=b[r1][c1],v=b[r2][c2],t=p[1],cfg=finCfg(t);
 const a=an={r1,c1,r2,c2,p,v,t,cfg,F:[c1*20,r1*20],T:[c2*20,r2*20],hit:0,hitAt:0,te:0,lastTe:0,parts:[],cues:cfg.cues.map(q=>({t:q[0],n:q[1]})),sx:0,sy:0,mag:0,fl:0,nd:0,mp:[0,0]};
 const t0=performance.now();draw();
 const step=now=>{if(an!==a)return;const raw=now-t0;let te=a.hit?(now-a.hitAt<70?cfg.ti:raw-70):raw;
@@ -981,6 +1019,7 @@ if(o.bonus){unl=OPPS.find(x=>x.id==o.bonus);L.push('SECRET OPPONENT: '+unl.name+
 if(o.ranks.moves==1)L.push('NEW BEST: FEWEST MOVES');else if(o.ranks.moves)L.push('TOP 5 FEWEST MOVES: #'+o.ranks.moves);
 if(o.ranks.time==1)L.push('NEW BEST: FASTEST WIN');else if(o.ranks.time)L.push('TOP 5 FASTEST WIN: #'+o.ranks.time);
 if(o.rankUp)L.push('NEW RANK: '+o.rankUp);
+for(const t of o.finishers)L.push('NEW FINISHER: '+FIN_PIECE[t]+' '+FIN_REQ[t].name);
 for(const t of o.themes)L.push('NEW THEME: '+TNAME[t.kind][t.id]+(t.kind=='board'?' BOARD':' PIECES'))}
 else if(lastOut.res=='l')L.push('STREAK LOST');else L.push('DRAW - STREAK KEPT AT '+prof.streak);
 $('out').innerHTML=L.join('<br>');ou.classList.add('on');
@@ -1185,7 +1224,11 @@ for(const id in THEME_REQ[kind]){const open=themeUnlocked(prof,kind,id),sel=prof
 const bt=document.createElement('button');bt.className='tc'+(open?'':' lk')+(sel?' sel':'');bt.setAttribute('aria-pressed',sel?'true':'false');bt.setAttribute('aria-disabled',open?'false':'true');bt.dataset.kind=kind;bt.dataset.id=id;
 const tx=document.createElement('span');tx.className='tt';tx.innerHTML='<b style="font-weight:normal">'+TNAME[kind][id]+'</b><em>'+(sel?'SELECTED':open?'UNLOCKED':'LOCKED - '+reqText(THEME_REQ[kind][id]))+'</em>';
 bt.append(themePrev(kind,id),tx);
-bt.onclick=()=>{if(!open)return;setTheme(prof,kind,id);saveProfile(store,prof);applyTheme();renderThemes()};L.appendChild(bt)}}}
+bt.onclick=()=>{if(!open)return;setTheme(prof,kind,id);saveProfile(store,prof);applyTheme();renderThemes()};L.appendChild(bt)}}
+for(const t of['P','N','B','R','Q','K']){const open=finUnlocked(prof,t),eq=(prof.fin&&prof.fin.eq&&prof.fin.eq[t])||'base',L=$('tf');
+const bt=document.createElement('button');bt.className='tc'+(open?'':' lk')+(eq=='alt'?' sel':'');bt.setAttribute('aria-pressed',eq=='alt'?'true':'false');bt.setAttribute('aria-disabled',open?'false':'true');
+const tx=document.createElement('span');tx.className='tt';tx.innerHTML='<b style="font-weight:normal">'+FIN_PIECE[t]+': '+FIN_REQ[t].name+'</b><em>'+(eq=='alt'?'EQUIPPED - TAP FOR BASE':open?'UNLOCKED - TAP TO EQUIP':'LOCKED - '+finReqText(FIN_REQ[t]))+'</em>';
+bt.append(tx);bt.onclick=()=>{if(!open)return;setFin(prof,t,eq=='alt'?'base':'alt');saveProfile(store,prof);renderThemes()};L.appendChild(bt)}}
 const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const fmtT=ms=>{const t=Math.round(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
 const fmtD=d=>{if(!d)return'-';const x=new Date(d);return MON[x.getMonth()]+' '+x.getDate()};
