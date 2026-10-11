@@ -154,8 +154,17 @@ button:disabled{opacity:.35;pointer-events:none}
 @keyframes dt{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
 @keyframes hp{50%{transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.lb,.pl.act .nm::before,.pl.thk .ch{animation:none}.lb.th::after{animation:none;content:'...'}}
+/* YouTube world music: small visible player + credit (kept visible per YouTube ToS) */
+#yt-wrap{position:fixed;right:8px;bottom:8px;z-index:10;display:none;flex-direction:column;gap:4px;align-items:flex-end;opacity:.94}
+#yt-wrap.on{display:flex}
+#yt-player{width:120px;height:68px;background:#000;box-shadow:0 0 0 2px var(--edge)}
+#yt-player iframe{width:120px;height:68px;border:0;display:block}
+#yt-credit{font-size:7px;line-height:1.5;background:var(--panel);color:var(--fg);padding:4px 6px;max-width:180px;text-align:right;box-shadow:0 -2px 0 0 var(--edge),0 2px 0 0 var(--edge),-2px 0 0 0 var(--edge),2px 0 0 0 var(--edge)}
+#yt-credit a{color:var(--accent)}
+@media (min-width:1000px){#yt-player,#yt-player iframe{width:160px;height:90px}}
 </style></head><body>
 <canvas id="bgc" aria-hidden="true"></canvas>
+<div id="yt-wrap" aria-label="World music player"><div id="yt-player"></div><div id="yt-credit"></div></div>
 <div id="app">
  <div class="top"><div class="tl"><button class="ic" id="pz" aria-label="Pause"><i></i><i></i></button></div><div class="ttl">PIXEL CHESS</div><div class="tr2"><button class="ic t" id="un" aria-label="Undo" disabled>UNDO</button><button class="ic t" id="hn" aria-label="Hint" style="margin-left:6px">HINT</button></div></div>
  <div class="pl" id="pb"><canvas class="pt" id="pt" width="16" height="16" aria-hidden="true"></canvas><span class="ch b"></span><span class="nm" id="nb">BLACK</span><span class="lb" id="sb"></span><span class="mt" id="mb"></span><div class="trw"><canvas id="cb" width="93" height="9" aria-label="Pieces captured by black"></canvas></div></div>
@@ -881,10 +890,53 @@ const p=ch(M.perc,st);if(p=='k'||p=='x')o.push({k:p});return o}
 /*MUSEND*/
 /* ---- music: a tiny step sequencer, one loop per scene, tension layer and ambience on top ---- */
 let mus=null;
-function musStart(id){musStop(true);if(!snd||!MUS[id])return;const c=au();if(!c)return;const bus=c.createGain();bus.gain.value=0;bus.gain.linearRampToValueAtTime(paused?.15:.7,c.currentTime+1.2);bus.connect(c.destination);
+function musStopChi(now){if(!mus)return;const m=mus,c=ac;mus=null;clearInterval(m.tim);try{const g=m.bus.gain;g.cancelScheduledValues(c.currentTime);g.setValueAtTime(g.value,c.currentTime);g.linearRampToValueAtTime(0,c.currentTime+(now?.05:.8));setTimeout(()=>{try{m.bus.disconnect()}catch(e){}},1200)}catch(e){}}
+function musStartChi(id){musStopChi(true);if(!snd||!MUS[id])return;const c=au();if(!c)return;const bus=c.createGain();bus.gain.value=0;bus.gain.linearRampToValueAtTime(paused?.15:.7,c.currentTime+1.2);bus.connect(c.destination);
 mus={id,M:MUS[id],st:0,next:c.currentTime+.15,bus,tv:0,tt:0,tim:setInterval(musPump,40)};musTension()}
-function musStop(now){if(!mus)return;const m=mus,c=ac;mus=null;clearInterval(m.tim);try{const g=m.bus.gain;g.cancelScheduledValues(c.currentTime);g.setValueAtTime(g.value,c.currentTime);g.linearRampToValueAtTime(0,c.currentTime+(now?.05:.8));setTimeout(()=>{try{m.bus.disconnect()}catch(e){}},1200)}catch(e){}}
-function musDuck(on){if(!mus||!ac)return;try{mus.bus.gain.setTargetAtTime(on?.15:.7,ac.currentTime,.1)}catch(e){}}
+function musDuckChi(on){if(!mus||!ac)return;try{mus.bus.gain.setTargetAtTime(on?.15:.7,ac.currentTime,.1)}catch(e){}}
+/* full music: chiptune fallback + YouTube world tracks (YT replaces chiptune once playing) */
+function musStart(id){musStartChi(id);ytStart(id)}
+function musStop(now){musStopChi(now);ytStop()}
+function musDuck(on){musDuckChi(on);ytDuck(on)}
+/*YT*/
+const YT_TRK={
+moss:{id:'FiWklAVZldY',title:'Shakabulizzy',artist:'Mavo'},
+vex:{id:'Doy8zGZLf4c',title:'Guide Pass',artist:'Zaylevelten (prod. Tenski)'},
+dune:{id:'Z3eVkzDYuhQ',title:'impossible',artist:'Tochi Bedford'}};
+let ytPlayer=null,ytReady=false,ytWanted=null,ytCur=null,ytApiReq=false;const YT_VOL=70;
+function ytCredit(){const w=$('yt-wrap'),c=$('yt-credit');if(!w||!c)return;const t=ytWanted?YT_TRK[ytWanted]:null;
+if(t&&snd){w.classList.add('on');c.innerHTML='';const s=document.createElement('span');s.textContent='\u266B '+t.title+' - '+t.artist+' ';
+const a=document.createElement('a');a.href='https://www.youtube.com/watch?v='+t.id;a.target='_blank';a.rel='noopener';a.textContent='YouTube';c.append(s,a)}
+else w.classList.remove('on')}
+function ytEnsure(cb){try{
+if(window.YT&&window.YT.Player){if(!ytPlayer)ytMk();if(cb)cb();return}
+if(!ytApiReq){ytApiReq=true;const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.async=true;
+s.onerror=()=>{ytApiReq=false;if(ytWanted&&snd&&!mus)musStartChi(ytWanted)};document.head.appendChild(s)}
+const iv=setInterval(()=>{if(window.YT&&window.YT.Player){clearInterval(iv);if(!ytPlayer)ytMk();if(cb)cb()}},300);
+setTimeout(()=>clearInterval(iv),15000)}catch(e){if(ytWanted&&snd&&!mus)try{musStartChi(ytWanted)}catch(_){}}}
+function ytMk(){try{const pv={autoplay:0,controls:1,disablekb:1,fs:0,rel:0,modestbranding:1,playsinline:1};
+if(/^https?:/.test(location.origin||''))pv.origin=location.origin;
+const prev=window.onYouTubeIframeAPIReady;
+window.onYouTubeIframeAPIReady=()=>{try{prev&&prev()}catch(e){}};
+ytPlayer=new window.YT.Player('yt-player',{width:'120',height:'68',playerVars:pv,events:{
+onReady:()=>{ytReady=true;try{ytPlayer.setVolume(YT_VOL)}catch(e){}if(ytWanted&&snd)ytLoad()},
+onStateChange:ev=>{try{
+const Y=window.YT;
+if(ev.data==Y.PlayerState.PLAYING){ytCur=ytWanted;musStopChi();ytCredit()}
+else if(ev.data==Y.PlayerState.ENDED&&ytWanted&&snd){try{ev.target.seekTo(0);ev.target.playVideo()}catch(_){}}
+}catch(_){}},
+onError:()=>{if(ytWanted&&snd&&!mus){try{musStartChi(ytWanted)}catch(_){}}}}});}catch(e){}}
+function ytLoad(){if(!ytPlayer||!ytReady||!ytWanted)return;const t=YT_TRK[ytWanted];if(!t)return;
+try{if(ytCur==ytWanted){ytPlayer.playVideo()}else ytPlayer.loadVideoById({videoId:t.id,startSeconds:0})}catch(e){}}
+function ytStart(id){ytWanted=YT_TRK[id]?id:null;ytCur=ytCur&&ytWanted==ytCur?ytCur:null;ytCredit();
+if(!ytWanted||!snd){ytHush();return}ytEnsure(ytLoad)}
+function ytHush(){try{if(ytPlayer&&ytReady)ytPlayer.pauseVideo()}catch(e){}}
+function ytStop(){ytWanted=null;ytCur=null;ytCredit();ytHush()}
+function ytDuck(on){try{if(ytPlayer&&ytReady)ytPlayer.setVolume(on?15:YT_VOL)}catch(e){}}
+function ytUnlock(){if(ytWanted&&snd&&ytPlayer&&ytReady){try{const st=ytPlayer.getPlayerState(),Y=window.YT;
+if(st!=Y.PlayerState.PLAYING)ytPlayer.playVideo()}catch(e){}}}
+document.addEventListener('pointerdown',ytUnlock);document.addEventListener('keydown',ytUnlock);
+/*YTEND*/
 function mn(f,t,d,ty,v){const c=ac,o=c.createOscillator(),g=c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+Math.max(.03,d));o.connect(g);g.connect(mus.bus);o.start(t);o.stop(t+Math.max(.03,d)+.02)}
 function mnz(t,d,v,fq,ty){const c=ac,n=c.sampleRate*d|0,bf=c.createBuffer(1,n,c.sampleRate),da=bf.getChannelData(0);for(let i=0;i<n;i++)da[i]=(Math.random()*2-1)*(1-i/n);
 const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=bf;f.type=ty||'highpass';f.frequency.value=fq;g.gain.value=v;s.connect(f);f.connect(g);g.connect(mus.bus);s.start(t)}
