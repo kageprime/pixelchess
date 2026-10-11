@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Arcade</title>
+<meta name="description" content="Pixel Arcade: a retro lobby for pixel-art board and table games.">
+<link rel="stylesheet" href="shared/arcade.css">
+<style>
+html{min-height:100%}
+body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;text-align:left;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.hd{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center;max-width:1100px;width:100%;margin:0 auto;padding:22px 24px 6px}
+.logo{font-size:clamp(14px,4.6vw,22px);line-height:1.3;margin:0;text-shadow:3px 3px 0 var(--accent)}
+.logo span{color:var(--accent);text-shadow:3px 3px 0 var(--edge)}
+.chip{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:10px 12px;font-size:8px;line-height:1.6;margin:4px}
+.chip #cr{color:var(--accent)}
+main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:22px 26px}
+.grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:26px}
+@media (min-width:600px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1000px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.card{display:flex;gap:14px;align-items:center;height:100%;min-height:120px;padding:16px;color:var(--fg);text-decoration:none;cursor:pointer}
+.ic{width:64px;height:64px;flex:none;shape-rendering:crispEdges}
+.ic .f{fill:var(--fg)}.ic .a{fill:var(--accent)}.ic .e{fill:var(--edge)}.ic .p{fill:var(--panel)}
+.tx{min-width:0;flex:1}
+.card h2{font-size:12px;line-height:1.4;margin:0 0 8px}
+.card p{font-size:8px;line-height:1.9;margin:0 0 10px;text-transform:uppercase}
+.bd{display:inline-block;font-size:7px;line-height:1;padding:6px 7px;color:#fff;background:var(--mute)}
+.bd.ok{background:var(--ok);color:#10200f}
+:root:not([data-theme="dark"]) .bd.ok{color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bd.ok{color:#10200f}}
+.best{display:block;font-size:7px;line-height:1.6;margin-top:10px;color:var(--accent)}
+@media (hover:hover){a.card:not(.soon):hover{--edge:var(--accent)}}
+a.card:not(.soon):active{transform:translateY(4px)}
+.card.soon{cursor:not-allowed}
+.card.soon .ic,.card.soon .tx{opacity:.7}
+.ft{display:flex;flex-wrap:wrap;gap:14px 22px;justify-content:center;align-items:center;max-width:1100px;width:100%;margin:0 auto;padding:18px 24px 26px;font-size:8px;line-height:1.8;text-align:center}
+.ft button{margin:0}
+.top-strip{background:var(--accent);color:#fff;text-align:center;font-size:7px;letter-spacing:.15em;padding:6px 10px}
+.hero{max-width:1100px;width:100%;margin:0 auto;padding:10px 26px 0;font-size:8px;line-height:2;text-transform:uppercase;opacity:.85}
+.card{position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:5px}
+.card[data-game="chess"]::before{background:var(--accent)}
+.card[data-game="ayo"]::before{background:#2e7d3f}
+.card[data-game="draughts"]::before{background:#7B61FF}
+.card[data-game="shogi"]::before{background:#2f6fae}
+.card[data-game="pool"]::before{background:#00B4D8}
+.card[data-game="scrabble"]::before{background:#FFC107}
+@media (hover:hover){a.card:not(.soon):hover{transform:translate(-2px,-2px)}}
+.tagline{color:var(--accent)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="top-strip">PIXEL ARCADE &middot; NAIJA BOARD GAMES &middot; PLAY FREE</div>
+<header class="hd">
+ <h1 class="logo">PIXEL <span>ARCADE</span></h1>
+ <div class="chip px" id="chip" role="group" aria-label="Your profile"><span id="cn">PLAYER</span><span id="cr">ROOKIE</span><span id="cx">XP 0</span></div>
+</header>
+<p class="hero">Chess, pool and words are live. Ayo, draughts and shogi are warming up.</p>
+<main>
+ <ul class="grid" aria-label="Games">
+  <li><a class="card px" href="chess/index.html" data-game="chess"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="f" d="M6 2h4v4h-4zM7 6h2v1h-2zM5 7h6v1h-6zM6 8h4v3h-4zM4 11h8v2h-8zM3 13h10v2h-10z"/><path class="p" d="M7 3h1v2h-1z"/><path class="a" d="M3 14h10v1h-10z"/></svg><span class="tx"><h2>CHESS</h2><p>Climb the ladder against three rivals.</p><span class="bd ok">PLAYABLE</span><span class="best" id="best-chess">NO GAMES YET</span></span></a></li>
+  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="ayo"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="f" d="M1 3h14v10h-14z"/><path class="e" d="M2 4h3v3h-3zM6 4h3v3h-3zM10 4h3v3h-3zM2 9h3v3h-3zM6 9h3v3h-3zM10 9h3v3h-3z"/><path class="a" d="M3 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM3 10h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1z"/></svg><span class="tx"><h2>AYO</h2><p>Sow seeds and capture pits.</p><span class="bd">SOON</span></span></a></li>
+  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="draughts"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="a" d="M9 1h4v1h-4zM8 2h6v1h-6zM7 3h8v4h-8zM8 7h6v1h-6zM9 8h4v1h-4z"/><path class="e" d="M10 4h2v2h-2z"/><path class="f" d="M3 7h4v1h-4zM2 8h6v1h-6zM1 9h8v4h-8zM2 13h6v1h-6zM3 14h4v1h-4z"/><path class="p" d="M4 10h2v2h-2z"/></svg><span class="tx"><h2>DRAUGHTS</h2><p>Jump, capture and get crowned.</p><span class="bd">SOON</span></span></a></li>
+  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="shogi"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="f" d="M7 1h2v1h-2zM6 2h4v1h-4zM5 3h6v1h-6zM4 4h8v1h-8zM3 5h10v10h-10z"/><path class="a" d="M7 7h2v6h-2zM5 9h6v1h-6z"/></svg><span class="tx"><h2>SHOGI</h2><p>Japanese chess with piece drops.</p><span class="bd">SOON</span></span></a></li>
+  <li><a class="card px" href="pool/index.html" data-game="pool"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="a" d="M6 2h4v1h-4zM4 3h8v1h-8zM3 4h10v1h-10zM2 5h12v6h-12zM3 11h10v1h-10zM4 12h8v1h-8zM6 13h4v1h-4z"/><path class="p" d="M6 6h4v4h-4z"/><path class="e" d="M7 7h2v2h-2z"/></svg><span class="tx"><h2>POOL</h2><p>Pixel 3D 8-ball against a CPU rival.</p><span class="bd ok">PLAYABLE</span><span class="best" id="best-pool">NO GAMES YET</span></span></a></li>
+  <li><a class="card px" href="scrabble/index.html" data-game="scrabble"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="f" d="M2 2h12v12h-12z"/><path class="p" d="M6 4h4v1h-4zM5 5h2v6h-2zM9 5h2v6h-2zM6 8h4v1h-4z"/><path class="a" d="M4 12h8v1h-8z"/></svg><span class="tx"><h2>SCRABBLE</h2><p>Spell big on the bonus squares.</p><span class="bd ok">PLAYABLE</span><span class="best" id="best-scrabble">NO GAMES YET</span></span></a></li>
+ </ul>
+</main>
+<footer class="ft">
+ <span>V1.1.0</span>
+ <button class="sm" id="snd" type="button" aria-pressed="true">SOUND: ON</button>
+ <span>BY KAGEPRIME</span>
+ <span class="tagline">WUSE TO BERGER. PLAY SOMETHING.</span>
+</footer>
+<script src="shared/shared.js"></script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id), S=window.Shared;
+ function paint(){
+  const p=S.profile();
+  $('cn').textContent=p.name;$('cr').textContent=p.rank.title;$('cx').textContent='XP '+p.xp;
+  $('best-chess').textContent=p.chess.played?'STREAK '+p.chess.streak+' \u00b7 BEST '+p.chess.best:'NO GAMES YET';
+  const pl=p.games.pool;$('best-pool').textContent=pl.played?'STREAK '+pl.streak+' \u00b7 BEST '+pl.best:'NO GAMES YET';
+  const sw=p.games.scrabble;$('best-scrabble').textContent=sw.played?'STREAK '+sw.streak+' \u00b7 BEST '+sw.best:'NO GAMES YET';
+  const on=S.sound.get();$('snd').textContent='SOUND: '+(on?'ON':'OFF');$('snd').setAttribute('aria-pressed',on);
+ }
+ paint();
+ addEventListener('shared:profile',paint);
+ addEventListener('pageshow',paint);
+ $('snd').addEventListener('click',()=>{S.sound.toggle();paint();S.blip(880)});
+ document.querySelectorAll('a.card').forEach(a=>{
+  a.addEventListener('click',e=>{if(a.classList.contains('soon')){e.preventDefault();return}S.blip(660)});
+  a.addEventListener('keydown',e=>{if(a.classList.contains('soon')&&(e.key==='Enter'||e.key===' '))e.preventDefault()});
+ });
+ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+/* Pixel Arcade shared styles. Same look as Pixel Chess; new games load this file instead of copying CSS.
+   Font: vendor/PressStart2P-Regular.woff2 (see vendor/README.txt). Falls back to monospace until it is added. */
+@font-face{font-family:'Press Start 2P';src:local('Press Start 2P'),local('PressStart2P-Regular'),url(vendor/PressStart2P-Regular.woff2) format('woff2');font-display:swap}
+:root{--bg:#e8d8b0;--bg2:#dcc994;--fg:#2a1d14;--panel:#fff3d1;--edge:#2a1d14;--accent:#e8433a;--ok:#2e7d3f;--mute:#5d5668;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1230;--bg2:#231741;--fg:#f5e9c8;--panel:#2e2250;--edge:#0b0616;--accent:#ffd23f;--ok:#4fd278;--mute:#a79fb8}}
+:root[data-theme="dark"]{--bg:#1b1230;--bg2:#231741;--fg:#f5e9c8;--panel:#2e2250;--edge:#0b0616;--accent:#ffd23f;--ok:#4fd278;--mute:#a79fb8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{border-radius:0;box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.07) 2px 3px)}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;margin:0 auto}
+.px{background:var(--panel);box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge)}
+button{font:inherit;font-size:10px;color:var(--fg);background:var(--panel);border:0;padding:12px;margin:8px 6px;cursor:pointer;min-height:44px;box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge),inset 0 -4px 0 0 rgba(0,0,0,.22)}
+@media (hover:hover){button:hover{background:var(--accent);color:#fff}}
+button:active{transform:translateY(4px);background:var(--accent);color:#fff}
+button:focus-visible,a:focus-visible{outline:4px solid var(--accent);outline-offset:6px}
+.big{display:block;width:min(74vw,290px);font-size:12px;padding:16px 8px;margin:14px auto}
+.sm{font-size:8px;padding:10px 8px;min-height:44px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
