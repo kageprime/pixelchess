@@ -277,7 +277,7 @@ if(!atk(b,r,c,p[0]).length||Math.min(...a)<V[p[1]])s.add(r+','+c)}return s}
 /*PROF*/
 const OPP_ORDER=['moss','vex','dune'],PKEY='pixelchess.v1',MIN_FAST=10,TOPN=5;
 const THEME_REQ={board:{scene:null,midnight:{beat:'moss'},candy:{beat:'vex'},ember:{beat:'dune'},glacier:{streak:3}},piece:{classic:null,jade:{beat:'vex'},gold:{beat:'dune'},neon:{streak:5}}};
-const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0});
+const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU'});
 const nn=(x,d=0)=>Number.isFinite(x)&&x>=0?Math.floor(x):d;
 const LESS={fast:(e,x)=>e.ms<x.ms,mate:(e,x)=>e.moves<x.moves||(e.moves==x.moves&&e.ms<x.ms),streaks:(e,x)=>e.n>x.n};
 /* insert into a top list (best first, max TOPN). Returns the 1-based rank, or 0 if it did not make the list. */
@@ -309,6 +309,7 @@ ins(p.top.mate[g.id]||(p.top.mate[g.id]=[]),{moves:mv,ms:nn(g.ms),undos:nn(g.und
 if(p.bestStreak>p.streak)p.top.streaks.push({n:p.bestStreak,date:0})}
 if(o.theme&&typeof o.theme=='object')for(const k of['board','piece'])if(typeof o.theme[k]=='string'&&themeUnlocked(p,k,o.theme[k]))p.theme[k]=o.theme[k];
 p.vol=(typeof o.vol=='number'&&o.vol>=0&&o.vol<=1)?o.vol:.7;
+p.name=(typeof o.name=='string'?o.name:'YOU').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';
 return p}
 function saveProfile(st,p){try{st.setItem(PKEY,JSON.stringify(p));return true}catch(e){return false}}
 const isUnlocked=(p,id)=>p.unlocked.includes(id);
@@ -320,7 +321,7 @@ const xpTitle=x=>{let t=RANKS[0][1];for(const[m,n]of RANKS)if(x>=m)t=n;return t}
 function recordResult(p,r){const before=themeKeys(p);const rc=p.rec[r.id]||(p.rec[r.id]={w:0,l:0,d:0});rc[r.res]++;p.total[r.res]++;
 const oldRank=xpTitle(p.xp||0);
 p.xp=(p.xp||0)+(r.res=='w'?100:r.res=='d'?30:10);
-const out={unlocked:null,cleared:false,bonus:null,rankUp:null,newBest:[],ranks:{time:0,moves:0},themes:[]};
+const out={unlocked:null,cleared:false,bonus:null,rankUp:null,streakFiled:0,newBest:[],ranks:{time:0,moves:0},themes:[]};
 if(xpTitle(p.xp)!=oldRank)out.rankUp=xpTitle(p.xp);
 if(r.res=='w'){p.streak++;if(p.streak>p.bestStreak)p.bestStreak=p.streak;
 const i=OPP_ORDER.indexOf(r.id),nx=OPP_ORDER[i+1];
@@ -331,7 +332,7 @@ const mv=Math.max(1,Math.ceil(r.plies/2)),T=p.top;
 if(r.mate)out.ranks.moves=ins(T.mate[r.id]||(T.mate[r.id]=[]),{moves:mv,ms:r.ms,undos:r.undos,date:r.date},LESS.mate);
 if(mv>=MIN_FAST&&r.ms>0)out.ranks.time=ins(T.fast[r.id]||(T.fast[r.id]=[]),{ms:r.ms,plies:r.plies,undos:r.undos,date:r.date},LESS.fast);
 if(out.ranks.moves==1)out.newBest.push('moves');if(out.ranks.time==1)out.newBest.push('time')}
-else if(r.res=='l'){if(p.streak>0)ins(p.top.streaks,{n:p.streak,date:r.date},LESS.streaks);p.streak=0}
+else if(r.res=='l'){out.streakFiled=p.streak;if(p.streak>0)ins(p.top.streaks,{n:p.streak,date:r.date},LESS.streaks);p.streak=0}
 p.games.unshift({id:r.id,res:r.res,plies:r.plies,ms:r.ms,caps:r.caps,left:r.left,undos:r.undos,date:r.date,san:r.san});
 if(p.games.length>100)p.games.length=100;
 out.themes=themeKeys(p).filter(k=>!before.includes(k)).map(k=>{const q=k.split(':');return{kind:q[0],id:q[1]}});
@@ -408,6 +409,29 @@ function revEnter(){if(!b||!hist.length)return;rev=revBuild();scr('s-over',0);$(
 function revExit(){if(!rev)return;const s=rev.sv;rev=null;b=s.b;last=s.last;turn=s.turn;mateAnim=s.mateAnim;hop=s.hop;pp=[];sel=null;moves=[];
 $('rev').classList.remove('on');draw();scr('s-over',1)}
 /*REVEND*/
+/*NET*/
+async function postScore(s){try{
+if(location.protocol.indexOf('http')!=0||!navigator.onLine)return null;
+const r=await fetch('api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});
+return await r.json()}catch(e){return null}}
+function submitScore(rec,out){try{
+if(location.protocol.indexOf('http')!=0||!navigator.onLine)return;
+const base={name:prof.name||'YOU',plies:rec.plies,ms:rec.ms,undos:rec.undos,san:rec.san,opp:rec.id,date:rec.date};
+if(out.ranks.time)postScore({...base,board:'fast:'+rec.id,value:rec.ms});
+if(out.ranks.moves)postScore({...base,board:'mate:'+rec.id,value:Math.max(1,Math.ceil(rec.plies/2))});
+if(out.streakFiled>0)postScore({...base,board:'streak',value:out.streakFiled,plies:1,ms:1}) }catch(e){}}
+async function loadWorld(){const defs=[['streak','BEST STREAKS']];
+for(const o of OPPS)defs.push(['fast:'+o.id,o.name+' FASTEST'],['mate:'+o.id,o.name+' FEWEST']);
+let h='';
+for(const[bd,title]of defs){let rows='';
+try{if(location.protocol.indexOf('http')!=0||!navigator.onLine)throw 0;
+const r=await fetch('api/scores?board='+encodeURIComponent(bd));const j=await r.json();
+const top=(j&&j.top||[]).slice(0,3);
+rows=top.length?top.map((e,i)=>ln((i+1)+'. '+e.n,bd=='streak'?e.v+' WINS':bd[0]=='f'?fmtT(e.v):e.v+' MOVES')).join(''):'<div class="ln"><span>NO WORLD SCORES YET</span></div>';
+}catch(e){rows='<div class="ln"><span>OFFLINE - LOCAL ONLY</span></div>'}
+h+='<div class="px ps"><h3>'+title+'</h3>'+rows+'</div>'}
+if(pfTab==4)$('pbody').innerHTML=h}
+/*NETEND*/
 let gmode='2p',exh=false,undosLeft=3,t0g=0,pauseAt=0,pausedMs=0,recorded=false,lastOut=null,prof,store=null;
 try{const ls=window.localStorage;ls.setItem('_pc','1');ls.removeItem('_pc');store=ls}catch(e){store=null}
 prof=loadProfile(store);
@@ -439,7 +463,7 @@ function finishGame(ck){recorded=true;if(gmode!='ladder')return;
 const res=ck?(turn=='b'?'w':'l'):'d',cnt=(t,f)=>f?hist.filter(h=>h.t==t&&h.cap).length:0;let left=0;
 for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]&&b[r][c][0]=='w')left++;
 const rec={id:opp.id,res,mate:!!ck,plies:hist.length,ms:Date.now()-t0g-pausedMs,caps:cnt('w',1),left,undos:3-undosLeft,san:hist.map(h=>h.san).join(' '),date:Date.now()};
-const out=recordResult(prof,rec);saveProfile(store,prof);lastOut={out,res}}
+const out=recordResult(prof,rec);saveProfile(store,prof);lastOut={out,res};submitScore(rec,out)}
 function aiMove(){if(over||an||sa||turn!='b'||!inGame)return;if(paused){aiWait=1;return}
 const id=++reqId,g=gid,t0=performance.now();
 const done=m=>{if(id!==reqId||g!==gid||!inGame||over||turn!='b'||!m)return;
@@ -920,24 +944,26 @@ bt.onclick=()=>{if(!open)return;setTheme(prof,kind,id);saveProfile(store,prof);a
 const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const fmtT=ms=>{const t=Math.round(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
 const fmtD=d=>{if(!d)return'-';const x=new Date(d);return MON[x.getMonth()]+' '+x.getDate()};
-let pfTab=0;const PTABS=['RECORD','STREAKS','FASTEST','FEWEST MOVES'];
+let pfTab=0;const PTABS=['RECORD','STREAKS','FASTEST','FEWEST MOVES','WORLD'];
 function ln(a,b){return'<div class="ln"><span>'+a+'</span><span>'+b+'</span></div>'}
 function renderProf(){const T=$('ptabs');T.innerHTML='';
 PTABS.forEach((n,i)=>{const bt=document.createElement('button');bt.className='sm'+(i==pfTab?' on':'');bt.textContent=n;bt.onclick=()=>{pfTab=i;renderProf()};T.appendChild(bt)});
 let h='';const t=prof.total;
 if(pfTab==0){h+='<div class="px ps"><h3>ALL LADDER GAMES</h3>'+ln('WINS / LOSSES / DRAWS',t.w+' / '+t.l+' / '+t.d)+ln('WIN STREAK NOW',prof.streak)+ln('BEST WIN STREAK',prof.bestStreak)+ln('RANK',xpTitle(prof.xp||0)+' - '+(prof.xp||0)+' XP')+ln('PUZZLE STREAK',prof.puz.streak+' (BEST '+prof.puz.best+')')+'</div>';
 h+='<div class="px ps"><h3>BY OPPONENT</h3>';
-for(const o of OPPS){if(!isUnlocked(prof,o.id)){h+=ln('???','LOCKED');continue}const r=prof.rec[o.id]||{w:0,l:0,d:0};h+=ln(o.name,'W'+r.w+' L'+r.l+' D'+r.d)}h+='</div>'}
+for(const o of OPPS){if(!isUnlocked(prof,o.id)){h+=ln('???','LOCKED');continue}const r=prof.rec[o.id]||{w:0,l:0,d:0};h+=ln(o.name,'W'+r.w+' L'+r.l+' D'+r.d)}h+='</div>';
+h+='<div class="px ps"><h3>WORLD BOARD NAME</h3><div class="ln"><span>NAME</span><span><input id="pfname" maxlength="12" value="'+prof.name+'"></span></div></div>'}
 else if(pfTab==1){const L=streakBoard(prof);h+='<div class="px ps"><h3>BEST WIN STREAKS</h3>';
 if(!L.length)h+='<div class="ln"><span>NO STREAKS YET - WIN A LADDER GAME</span></div>';
 L.forEach((e,i)=>{h+=ln((i+1)+'. '+e.n+(e.n==1?' WIN':' WINS'),e.cur?'RUNNING NOW':fmtD(e.date))});h+='</div>'}
+else if(pfTab==4){h+='<div class="px ps"><h3>WORLD</h3><div class="ln"><span>LOADING...</span></div></div>';setTimeout(loadWorld,30)}
 else{const fast=pfTab==2,src=fast?prof.top.fast:prof.top.mate;
 for(const o of OPPS){if(!isUnlocked(prof,o.id))continue;const L=src[o.id]||[];h+='<div class="px ps"><h3>'+o.name+'</h3>';
 if(!L.length)h+='<div class="ln"><span>'+(fast?'NO QUALIFYING WIN YET':'NO WIN YET')+'</span></div>';
 L.forEach((e,i)=>{const u=e.undos?' U'+e.undos:'';h+=fast?ln((i+1)+'. '+fmtT(e.ms),Math.ceil(e.plies/2)+' MOVES'+u+' - '+fmtD(e.date)):ln((i+1)+'. '+e.moves+' MOVES',fmtT(e.ms)+u+' - '+fmtD(e.date))});h+='</div>'}
 h+='<p class="nt">'+(fast?'ONLY WINS OF '+MIN_FAST+'+ MOVES COUNT.<br>':'')+'U = UNDOS USED IN THAT GAME</p>'}
 if(!store)h+='<p class="nt">PROGRESS IS NOT SAVED ON THIS DEVICE</p>';
-$('pbody').innerHTML=h}
+$('pbody').innerHTML=h;const fi=$('pfname');if(fi)fi.onchange=()=>{prof.name=(fi.value||'').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';fi.value=prof.name;saveProfile(store,prof)}}
 $('th').onclick=()=>{scr('s-title',0);renderThemes();scr('s-themes',1)};$('thb').onclick=()=>{scr('s-themes',0);scr('s-title',1)};
 $('pf').onclick=()=>{scr('s-title',0);renderProf();scr('s-prof',1)};$('pfb').onclick=()=>{scr('s-prof',0);scr('s-title',1)};
 /* ---- wiring ---- */

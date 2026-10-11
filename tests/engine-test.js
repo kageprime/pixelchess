@@ -191,6 +191,16 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
     const l = P.recordResult(P.newProfile(), R('moss', 'l'));
     eq('loss gives 10 XP, no rank up', [l.rankUp], [null]);
   }
+  eq('fresh profile name', P.newProfile().name, 'YOU');
+  {
+    const d = {};
+    const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
+    P.saveProfile(st, P.newProfile());
+    st.d[P.PKEY] = JSON.stringify({ v: 1, name: 'A!@#verylongname123' });
+    eq('name sanitised on load', P.loadProfile(st).name, 'Averylongnam');
+    const l = P.recordResult(P.newProfile(), R('moss', 'l'));
+    eq('loss files finished streak', l.streakFiled >= 0, true);
+  }
   o = P.recordResult(p, R('dune', 'w'));
   eq('ladder cleared only reported the first time', o.cleared, false);
   for (let i = 0; i < 120; i++) P.recordResult(p, R('moss', 'w'));
