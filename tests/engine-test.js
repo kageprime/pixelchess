@@ -203,7 +203,7 @@ eq('queen attacked by a defended bishop trembles', T('4k3/8/8/3q4/8/5B2/8/4K3 b 
 eq('kings never tremble', T('4k3/8/8/8/8/8/4q3/4K3 w - -').includes('7,4'), false);
 
 // --- profile / ladder rules ---
-const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle,mkInitials}')();
+const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle,mkInitials,finUnlocked,setFin,finKeys,FIN_REQ}')();
 const mem = () => { const d = {}; return { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d }; };
 const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies: 41, ms: 90000, caps: 3, left: 9, undos: 0, san: 'e4', date: 1 }, o);
 {
@@ -230,6 +230,7 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
   o = P.recordResult(p, R('dune', 'w'));
   eq('beating Old Dune clears the ladder once', [o.cleared, o.unlocked], [true, null]);
   eq('clearing unlocks secret NOX', [o.bonus, P.isUnlocked(p, 'nox')], ['nox', true]);
+  eq('clearing unlocks the KING finisher', [o.finishers.includes('K'), P.finUnlocked(p, 'K')], [true, true]);
   eq('ladder XP: win 100', p.xp >= 400, true);
   eq('rank titles', [P.xpTitle(0), P.xpTitle(199), P.xpTitle(200), P.xpTitle(2000)], ['PAWN', 'PAWN', 'KNIGHT', 'PIXEL KING']);
   {
@@ -238,6 +239,31 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
     eq('crossing 200 XP ranks up', [q.xp, r.rankUp], [250, 'KNIGHT']);
     const l = P.recordResult(P.newProfile(), R('moss', 'l'));
     eq('loss gives 10 XP, no rank up', [l.rankUp], [null]);
+  }
+  {
+    const q = P.newProfile();
+    eq('fresh profile: no finishers', P.finKeys(q), []);
+    eq('setFin refuses locked', [P.setFin(q, 'P', 'alt'), q.fin.eq.P], [false, 'base']);
+    eq('setFin always allows base', P.setFin(q, 'N', 'base'), true);
+    let o = P.recordResult(q, R('moss', 'w'));
+    eq('beating Mossback unlocks KNIGHT finisher', [o.finishers, P.finUnlocked(q, 'N')], [['N'], true]);
+    o = P.recordResult(q, R('vex', 'w'));
+    eq('beating Vex unlocks PAWN finisher', [o.finishers, P.finUnlocked(q, 'P')], [['P'], true]);
+    o = P.recordResult(q, R('moss', 'w'));
+    eq('3 streak unlocks BISHOP finisher', [o.finishers, P.finUnlocked(q, 'B')], [['B'], true]);
+    o = P.recordResult(q, R('dune', 'w'));
+    eq('beating Dune unlocks ROOK finisher', [o.finishers.includes('R'), P.finUnlocked(q, 'R')], [true, true]);
+    o = P.recordResult(q, R('moss', 'w'));
+    eq('5 streak unlocks QUEEN finisher', [o.finishers, P.finUnlocked(q, 'Q')], [['Q'], true]);
+    eq('equip unlocked alt', P.setFin(q, 'N', 'alt') && q.fin.eq.N, 'alt');
+    const d = {};
+    const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
+    P.saveProfile(st, q);
+    const q2 = P.loadProfile(st);
+    eq('equipped alt survives reload', q2.fin.eq.N, 'alt');
+    st.d[P.PKEY] = JSON.stringify({ v: 1, rec: {}, streak: 0, bestStreak: 0, fin: { eq: { P: 'alt', Q: 'alt' } } });
+    const q3 = P.loadProfile(st);
+    eq('locked alts fall back to base on load', [q3.fin.eq.P, q3.fin.eq.Q], ['base', 'base']);
   }
   eq('fresh profile name', P.newProfile().name, 'YOU');
   {
