@@ -171,6 +171,8 @@ button:disabled{opacity:.35;pointer-events:none}
 #revbox span:last-child{display:flex;gap:4px}
 #revbox .sm{margin:0;min-height:36px;padding:8px}
 #vv{min-width:7ch;box-sizing:border-box;text-align:center}
+#netmsg{font-size:8px!important;line-height:2!important}
+#netcode{font:inherit;font-size:14px;text-align:center;width:10ch;padding:10px;margin:8px 6px;min-height:44px;box-sizing:border-box;background:var(--panel);color:var(--fg);border:0;text-transform:uppercase;box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge)}
 </style></head><body>
 <canvas id="bgc" aria-hidden="true"></canvas>
 <div id="yt-wrap" aria-label="World music player"><div id="yt-player"></div><div id="yt-credit"></div></div>
@@ -188,11 +190,12 @@ button:disabled{opacity:.35;pointer-events:none}
  <div id="trk"></div>
  <button class="big" data-m="1">VS CPU</button>
  <button class="big" data-m="2">2 PLAYERS</button>
- <button class="big" id="dp">DAILY PUZZLE</button>
+ <div class="row"><button class="sm" id="dp">DAILY PUZZLE</button><button class="sm" id="onl">ONLINE</button></div>
  <div class="row"><button class="sm tsnd">SND ON</button><button class="sm tfx">FX ON</button></div>
  <div class="row"><button class="sm" id="hp">HOW TO PLAY</button><button class="sm" id="th">THEMES</button><button class="sm" id="pf">PROFILE</button></div>
 </div>
 <div class="scr" id="s-opp"><h2>CHOOSE OPPONENT</h2><p id="osm"></p><div id="ol"></div><div class="row"><button class="sm" id="ex">EXHIBITION: OFF</button><button class="sm" id="bz">BLITZ: OFF</button><button class="sm" id="ob">BACK</button></div></div>
+<div class="scr" id="s-net"><div class="px card"><h2>ONLINE</h2><p id="netmsg">HOST OR JOIN A FRIEND. FREE, PEER TO PEER.</p><div class="row"><input id="netcode" maxlength="4" placeholder="CODE" aria-label="Room code" autocomplete="off"></div><div class="row"><button class="sm" id="neth">HOST</button><button class="sm" id="netj">JOIN</button><button class="sm" id="bz2">BLITZ: OFF</button></div><div class="row"><button class="sm" id="netb">BACK</button></div></div></div>
 <div class="scr" id="s-themes"><div class="pane"><h2>THEMES</h2><p class="lab">BOARD</p><div class="tg" id="tb"></div><p class="lab">PIECES</p><div class="tg" id="tp"></div><button class="sm" id="thb">BACK</button></div></div>
 <div class="scr" id="s-prof"><div class="pane"><h2>PROFILE</h2><div class="row tabs" id="ptabs"></div><div id="pbody"></div><button class="sm" id="pfb">BACK</button></div></div>
 <div class="scr dim" id="s-pause"><div class="px card"><h2>PAUSED</h2>
@@ -487,6 +490,134 @@ rows=top.length?top.map((e,i)=>ln((i+1)+'. '+e.n,bd=='streak'?e.v+' WINS':bd[0]=
 h+='<div class="px ps"><h3>'+title+'</h3>'+rows+'</div>'}
 if(pfTab==4)$('pbody').innerHTML=h}
 /*NETEND*/
+/*P2P*/
+let p2p=null,remoteApplying=false;
+const ICECFG={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+const mkRoom=()=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.random()*A.length|0];return s};
+async function sigPost(room,msg){try{
+const r=await fetch('api/signal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,msg})});
+return await r.json()}catch(e){return null}}
+async function sigGet(room,since){try{
+const r=await fetch('api/signal?room='+encodeURIComponent(room)+'&since='+since);
+return await r.json()}catch(e){return null}}
+function netSend(o){try{if(p2p&&p2p.dc&&p2p.dc.readyState=='open')p2p.dc.send(JSON.stringify(o))}catch(e){}}
+function netLeave(){try{if(p2p){if(p2p.pollT)clearInterval(p2p.pollT);if(p2p.lostT)clearTimeout(p2p.lostT);
+try{p2p.dc&&p2p.dc.close()}catch(e){}try{p2p.pc&&p2p.pc.close()}catch(e){}}}catch(e){}p2p=null}
+function showNet(msg){scr('s-title',0);scr('s-net',1);blitzLabel();if(msg)$('netmsg').textContent=msg}
+function netMsg(txt){$('netmsg').textContent=txt}
+function blitzLabel(){const t='BLITZ: '+(blitz?blitz+' MIN':'OFF');if($('bz'))$('bz').textContent=t;if($('bz2'))$('bz2').textContent=t}
+function blitzCycle(){blitz=blitz==0?3:blitz==3?5:0;blitzLabel()}
+function wireDc(dc){dc.onopen=netLinked;
+dc.onmessage=e=>{try{netOn(JSON.parse(e.data))}catch(_){}};
+dc.onclose=netLost}
+function wirePc(pc){
+pc.onicecandidate=e=>{if(e.candidate&&p2p)sigPost(p2p.room,{t:'ice',from:p2p.side=='w'?'h':'g',d:e.candidate})};
+pc.onconnectionstatechange=()=>{if(p2p&&pc.connectionState=='failed')netLost()}}
+async function drainIce(){if(!p2p)return;const q=p2p.iceQ;p2p.iceQ=[];
+for(const c of q){try{await p2p.pc.addIceCandidate(c)}catch(e){}}}
+async function hostOffer(){const pc=new RTCPeerConnection(ICECFG);p2p.pc=pc;wirePc(pc);
+const dc=pc.createDataChannel('pc');p2p.dc=dc;wireDc(dc);
+const off=await pc.createOffer();await pc.setLocalDescription(off);
+await sigPost(p2p.room,{t:'offer',from:'h',d:pc.localDescription});
+if(p2p.pollT)clearInterval(p2p.pollT);
+p2p.pollT=setInterval(netPollHost,1500)}
+async function netPollHost(){if(!p2p||p2p.connected)return;
+const r=await sigGet(p2p.room,p2p.cursor);if(!r||!r.ok)return;p2p.cursor=r.next;
+for(const m of r.msgs){let g;try{g=JSON.parse(m)}catch(e){continue}
+if(g.t=='answer'&&g.from=='g'&&!p2p.answered){p2p.answered=true;
+try{await p2p.pc.setRemoteDescription(g.d);await drainIce()}catch(e){}}
+else if(g.t=='ice'&&g.from=='g'){p2p.iceQ.push(g.d);if(p2p.answered)await drainIce()}}}
+async function netHost(){netLeave();p2p={side:'w',room:mkRoom(),connected:false,cursor:0,iceQ:[],started:false};
+showNet('CODE '+p2p.room+' - WAITING FOR FRIEND...');
+try{await hostOffer()}catch(e){netMsg('FAILED TO START - TRY AGAIN')}}
+async function netJoin(room){netLeave();
+room=(room||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+if(room.length!=4){showNet('ENTER A 4-LETTER CODE');return}
+p2p={side:'b',room,connected:false,cursor:0,iceQ:[],started:false};
+showNet('JOINING '+room+'...');
+for(let i=0;i<20;i++){const r=await sigGet(room,p2p.cursor);if(r&&r.ok&&r.msgs.length)break;
+if(i==19){netMsg('NO SUCH ROOM - CHECK THE CODE');p2p=null;return}
+await new Promise(r2=>setTimeout(r2,1500))}
+try{await guestAnswer()}catch(e){netMsg('JOIN FAILED - TRY AGAIN');p2p=null}}
+async function guestAnswer(){const pc=new RTCPeerConnection(ICECFG);p2p.pc=pc;wirePc(pc);
+pc.ondatachannel=e=>{p2p.dc=e.channel;wireDc(p2p.dc)};
+let offer=null;
+for(let i=0;i<20&&!offer;i++){const r=await sigGet(p2p.room,p2p.cursor);
+if(r&&r.ok){p2p.cursor=r.next;for(const m of r.msgs){let g;try{g=JSON.parse(m)}catch(e){continue}
+if(g.t=='offer'&&g.from=='h'&&!offer)offer=g.d;else if(g.t=='ice'&&g.from=='h')p2p.iceQ.push(g.d)}}
+if(!offer)await new Promise(r2=>setTimeout(r2,1500))}
+if(!offer)throw 0;
+await guestHello(offer);
+if(p2p.pollT)clearInterval(p2p.pollT);
+p2p.pollT=setInterval(netPollGuest,1500)}
+async function guestHello(offer){if(p2p.answering)return;p2p.answering=true;
+try{await p2p.pc.setRemoteDescription(offer);await drainIce();
+const ans=await p2p.pc.createAnswer();await p2p.pc.setLocalDescription(ans);
+await sigPost(p2p.room,{t:'answer',from:'g',d:p2p.pc.localDescription})}finally{p2p.answering=false}}
+async function netPollGuest(){if(!p2p||!p2p.pc)return;
+const r=await sigGet(p2p.room,p2p.cursor);if(!r||!r.ok)return;p2p.cursor=r.next;
+for(const m of r.msgs){let g;try{g=JSON.parse(m)}catch(e){continue}
+if(g.t=='offer'&&g.from=='h'&&!p2p.connected){try{
+const npc=new RTCPeerConnection(ICECFG);p2p.pc=npc;wirePc(npc);
+npc.ondatachannel=e=>{p2p.dc=e.channel;wireDc(p2p.dc)};
+await guestHello(g.d)}catch(e){}}
+else if(g.t=='ice'&&g.from=='h'){try{await p2p.pc.addIceCandidate(g.d)}catch(e){p2p.iceQ.push(g.d)}}}
+await drainIce()}
+function netLinked(){if(!p2p)return;
+if(p2p.pollT){clearInterval(p2p.pollT);p2p.pollT=null}
+if(p2p.lostT){clearTimeout(p2p.lostT);p2p.lostT=null}
+p2p.connected=true;
+netSend({t:'hello',d:{name:prof.name||'YOU',rank:xpTitle(prof.xp||0)}});
+const rejoin=inGame&&gmode=='online'&&hist.length>0;
+startOnline(!rejoin);
+if(rejoin&&p2p.side=='w')netSync()}
+function startOnline(fresh){if(!p2p||p2p.started)return;p2p.started=true;
+au();ai=false;gmode='online';inGame=true;paused=false;
+['s-title','s-opp','s-net','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
+$('app').classList.add('on');setupOpp();sceneSet();
+const foe=p2p.foe;
+$('nb').textContent=p2p.side=='b'?'BLACK - YOU':(foe?foe.n:'BLACK');
+$('nwh').textContent=p2p.side=='w'?'WHITE - YOU':(foe?foe.n:'WHITE');
+size();if(fresh===false){clkT0=Date.now();draw()}else init();
+$('bub').classList.add('on');
+bubText('LINKED - YOU PLAY '+(p2p.side=='w'?'WHITE':'BLACK'),1)}
+function netHello(d){if(!p2p||gmode!='online')return;
+const nm=String((d&&d.name)||'FOE').toUpperCase().slice(0,12),rk=String((d&&d.rank)||'');
+p2p.foe={n:nm+(rk?' '+rk:'')};
+if(p2p.side=='w')$('nb').textContent=p2p.foe.n;
+else $('nwh').textContent=p2p.foe.n}
+function netOn(o){if(!p2p||gmode!='online')return;
+if(o.t=='hello'){netHello(o.d);return}
+if(o.t=='bye'){bubText('FOE LEFT THE GAME',1);return}
+if(o.t=='rm'){if(over){p2p.side=p2p.side=='w'?'b':'w';p2p.started=false;startOnline()}return}
+if(o.t=='sync'&&p2p.side=='b'&&Array.isArray(o.moves)){
+let nb=newBoard();const nh=[];
+for(const m of o.moves){if(!Array.isArray(m)||m.length<4)break;
+const[r,c,y,x]=m,pr=m[4]||'Q';if(!nb[r]||!nb[r][c])break;
+const mover=nh.length%2==0?'w':'b';if(nb[r][c][0]!=mover)break;
+const after=apply(nb,r,c,y,x,pr);
+nh.push({b:nb,t:mover,mv:[r,c,y,x],san:toSAN(nb,r,c,y,x,pr,after),cap:nb[y][x]||(nb[r][c][1]=='P'&&c!=x?nb[r][x]:null),pr});
+nb=after}
+b=nb;hist=nh;const lm=nh[nh.length-1];
+turn=nh.length%2==0?'w':'b';last=lm?[[lm.mv[0],lm.mv[1]],[lm.mv[2],lm.mv[3]]]:null;
+sel=null;moves=[];hint=null;over=false;status();draw();refreshUI();return}
+if(o.t=='mv'&&Array.isArray(o.m)&&o.m.length>=4){
+const foe=p2p.side=='w'?'b':'w';if(turn!=foe||over)return;
+const[r,c,y,x]=o.m,pr=o.m[4]||'Q';
+if(!b[r]||!b[r][c]||b[r][c][0]!=foe)return;
+if(!legal(b,r,c).some(m=>m[0]==y&&m[1]==x))return;
+remoteApplying=true;try{play(r,c,y,x,pr)}catch(e){}remoteApplying=false;return}}
+function netLost(){if(!p2p||!p2p.connected||p2p.lostT)return;
+bubText('LINK LOST - REJOINING...',1);
+if(p2p.pollT){clearInterval(p2p.pollT);p2p.pollT=null}
+if(p2p.side=='w'){netRehost()}else{p2p.pollT=setInterval(netPollGuest,1500)}
+p2p.lostT=setTimeout(()=>{if(p2p&&!p2p.connected){netLeave();showNet('FOE GONE - HOST OR JOIN AGAIN')}},30000)}
+async function netRehost(){if(!p2p)return;p2p.connected=false;p2p.answered=false;p2p.iceQ=[];
+try{await hostOffer()}catch(e){}}
+function netRematch(){if(!p2p||gmode!='online'||!over)return;
+p2p.side=p2p.side=='w'?'b':'w';p2p.started=false;netSend({t:'rm'});startOnline()}
+function netSync(){if(p2p&&p2p.side=='w'&&hist.length)netSend({t:'sync',moves:hist.map(h=>h.mv.concat(h.pr||'Q'))})}
+/*P2PEND*/
 let gmode='2p',exh=false,undosLeft=3,t0g=0,pauseAt=0,pausedMs=0,recorded=false,lastOut=null,prof,store=null;
 try{const ls=window.localStorage;ls.setItem('_pc','1');ls.removeItem('_pc');store=ls}catch(e){store=null}
 prof=loadProfile(store);
@@ -541,6 +672,7 @@ if(over&&chkCol&&fx)for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++)if(b[rr][cc]==
 if(cp&&V[cp[1]]>=3&&fx&&!over){hop={r:y,c:x,t0:performance.now()};sfx('taunt')}
 draw();kick();
 if(gmode=='puzzle'){puzAfter();return}
+if(gmode=='online'&&!remoteApplying)netSend({t:'mv',m:[r,c,y,x,promo]});
 if(tutor&&gmode!='puzzle')coachMove(bb,hist[hist.length-1]);
 if(!over&&ai&&turn=='b')setTimeout(aiMove,60)}
 function kingFx(big){for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]==chkCol+'K'){const cx=c*20+10,cy=r*20+10;
@@ -749,7 +881,7 @@ const ka=Math.max(1,Math.min(3,Math.floor((vw-40)/W))),g=id=>$(id).style;
 g('art').width=W*ka+'px';g('art').height=48*ka+'px';g('oart').width=64*ka+'px';g('oart').height=48*ka+'px'}
 /* ---- input: pointer events for instant response, tap or drag ---- */
 const cpos=e=>{const R=cv.getBoundingClientRect(),k=W/R.width;return[(e.clientX-R.left)*k,(e.clientY-R.top)*k]};
-const canAct=()=>inGame&&!paused&&!an&&!sa&&!over&&!pend&&!(ai&&turn=='b')&&(gmode!='puzzle'||turn==puzSide);
+const canAct=()=>inGame&&!paused&&!an&&!sa&&!over&&!pend&&!(ai&&turn=='b')&&(gmode!='puzzle'||turn==puzSide)&&(gmode!='online'||(p2p&&turn==p2p.side));
 function tryMove(r,c,y,x,dp){const p=b[r][c];
 if(p[1]=='P'&&(y==0||y==7)){pend={r,c,y,x};drag=null;showPromo();return}
 play(r,c,y,x,'Q',dp)}
@@ -778,9 +910,9 @@ SFX.unlock=()=>[392,523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,
 SFX.lose=()=>[330,262,196].forEach((f,i)=>setTimeout(()=>tone(f,.25,'sawtooth',.05),i*160));
 const scr=(id,on)=>{$(id).classList.toggle('on',on);const t=$('s-title').classList.contains('on')||$('s-over').classList.contains('on');
 if(t&&!artT)artT=setInterval(artTick,110);if(!t&&artT){clearInterval(artT);artT=null}};
-function startGame(m,o,ex){au();ai=m==1;if(o){opp=o;exh=!!ex}gmode=!ai?'2p':(exh?'exh':'ladder');inGame=true;paused=false;['s-title','s-opp','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
+function startGame(m,o,ex){au();netLeave();ai=m==1;if(o){opp=o;exh=!!ex}gmode=!ai?'2p':(exh?'exh':'ladder');inGame=true;paused=false;['s-title','s-opp','s-net','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
 $('app').classList.add('on');$('nb').textContent=ai?opp.name:'BLACK - P2';setupOpp();sceneSet();$('nwh').textContent=ai?'WHITE - YOU':'WHITE - P1';size();init()}
-function toTitle(){inGame=false;paused=false;an=null;sa=null;pend=null;drag=null;pp=[];hop=null;mateAnim=null;gid++;reqId++;$('app').classList.remove('on');['s-opp','s-pause','s-over','s-help','s-promo'].forEach(i=>scr(i,0));scr('s-title',1);puzLabel();rankLabel();sceneSet()}
+function toTitle(){inGame=false;paused=false;an=null;sa=null;pend=null;drag=null;pp=[];hop=null;mateAnim=null;gid++;reqId++;$('app').classList.remove('on');['s-opp','s-net','s-pause','s-over','s-help','s-promo'].forEach(i=>scr(i,0));scr('s-title',1);puzLabel();rankLabel();netLeave();sceneSet()}
 function pause(){if(!inGame||an||sa||over||paused||pend)return;if(blitz)CLK[turn]-=Date.now()-clkT0;paused=true;pauseAt=Date.now();drag=null;scr('s-pause',1);musDuck(1)}
 function resume(){if(paused)pausedMs+=Date.now()-pauseAt;paused=false;if(blitz)clkT0=Date.now();scr('s-pause',0);musDuck(0);if(aiPend){const m=aiPend;aiPend=null;play(...m)}else if(aiWait){aiWait=0;setTimeout(aiMove,150)}}
 function showPromo(){const row=$('pr');row.innerHTML='';
@@ -805,7 +937,7 @@ for(const t of o.themes)L.push('NEW THEME: '+TNAME[t.kind][t.id]+(t.kind=='board
 else if(lastOut.res=='l')L.push('STREAK LOST');else L.push('DRAW - STREAK KEPT AT '+prof.streak);
 $('out').innerHTML=L.join('<br>');ou.classList.add('on');
 if(unl){portrait(ouc.getContext('2d'),unl,'h',false);ouc.classList.add('on');nx.textContent='NEXT: '+unl.name;nx.classList.add('on')}}
-scr('s-over',1);sfx(unl?'unlock':(mate||flag)&&(w=='w'||!ai)?'win':'lose')}
+scr('s-over',1);sfx(unl?'unlock':(mate||flag)&&(gmode=='online'?w==p2p.side:(w=='w'||!ai))?'win':'lose')}
 /* ---- share card: snapshot the result + board as a PNG, share or download ---- */
 async function shareCard(silent){if(!b)return null;
 try{
@@ -849,7 +981,7 @@ function drawRib(){const rb=$('rb');if(!hist.length){rb.innerHTML='<span class="
 let h='';hist.forEach((m,i)=>{if(i%2==0)h+='<b>'+(i/2+1)+'.</b>';h+='<span'+(i==hist.length-1?' class="cur"':'')+'>'+m.san+'</span>'});
 rb.innerHTML=h;rb.scrollLeft=rb.scrollWidth;rb.scrollTop=rb.scrollHeight}
 function refreshUI(){drawTray('w');drawTray('b');drawRib();
-const cpuTurn=ai&&turn=='b';$('un').disabled=hist.length<(ai?2:1)||cpuTurn||over||gmode=='puzzle'||(gmode=='ladder'&&undosLeft<=0);$('un').textContent=gmode=='ladder'?'UNDO '+undosLeft:'UNDO';$('hn').disabled=cpuTurn||over||gmode=='puzzle';$('hn').textContent='HINT'}
+const cpuTurn=ai&&turn=='b';$('un').disabled=hist.length<(ai?2:1)||cpuTurn||over||gmode=='puzzle'||gmode=='online'||(gmode=='ladder'&&undosLeft<=0);$('un').textContent=gmode=='ladder'?'UNDO '+undosLeft:'UNDO';$('hn').disabled=cpuTurn||over||gmode=='puzzle'||gmode=='online';$('hn').textContent='HINT'}
 function undo(){if(gmode=='puzzle'||!canAct())return;const n=ai?2:1;if(hist.length<n)return;if(gmode=='ladder'){if(undosLeft<=0)return;undosLeft--}let e;for(let i=0;i<n;i++)e=hist.pop();
 b=e.b;turn=e.t;const pv=hist[hist.length-1];last=pv?[[pv.mv[0],pv.mv[1]],[pv.mv[2],pv.mv[3]]]:null;
 sel=null;moves=[];hint=null;drag=null;reqId++;aiPend=null;aiWait=0;status();draw();sfx('sel');buzz(10);BUS.emit('undo',{n})}
@@ -1024,13 +1156,15 @@ $('th').onclick=()=>{scr('s-title',0);renderThemes();scr('s-themes',1)};$('thb')
 $('pf').onclick=()=>{scr('s-title',0);renderProf();scr('s-prof',1)};$('pfb').onclick=()=>{scr('s-prof',0);scr('s-title',1)};
 /* ---- wiring ---- */
 Q('[data-m]').forEach(e=>e.onclick=()=>+e.dataset.m==1?showOpp():startGame(2));$('dp').onclick=()=>startPuzzle();puzLabel();rankLabel();
-$('ob').onclick=()=>{scr('s-opp',0);scr('s-title',1)};$('ex').onclick=()=>{exh=!exh;renderOpp()};$('bz').onclick=()=>{blitz=blitz==0?3:blitz==3?5:0;$('bz').textContent='BLITZ: '+(blitz?blitz+' MIN':'OFF')};$('nx').onclick=()=>{const o=OPPS[OPP_ORDER.indexOf(opp.id)+1];if(o)startGame(1,o,false)};$('sh').onclick=()=>shareCard();
+$('onl').onclick=()=>showNet();$('netb').onclick=()=>{netLeave();scr('s-net',0);scr('s-title',1)};
+$('neth').onclick=()=>netHost();$('netj').onclick=()=>netJoin($('netcode').value);$('bz2').onclick=blitzCycle;
+$('ob').onclick=()=>{scr('s-opp',0);scr('s-title',1)};$('ex').onclick=()=>{exh=!exh;renderOpp()};$('bz').onclick=blitzCycle;$('nx').onclick=()=>{const o=OPPS[OPP_ORDER.indexOf(opp.id)+1];if(o)startGame(1,o,false)};$('sh').onclick=()=>shareCard();
 Q('.tlvl').forEach(e=>e.onclick=()=>{lvl=(lvl+1)%3;Q('.tlvl').forEach(x=>x.textContent='CPU: '+['EASY','NORMAL','HARD'][lvl])});
 Q('.tsnd').forEach(e=>e.onclick=()=>{snd=!snd;Q('.tsnd').forEach(x=>x.textContent=snd?'SND ON':'SND OFF');if(snd){au();sfx('move');if(inGame&&scn)musStart(scn)}else musStop(true)});
 Q('.tfx').forEach(e=>e.onclick=()=>{fx=!fx;Q('.tfx').forEach(x=>x.textContent=fx?'FX ON':'FX OFF')});
 $('vd').onclick=()=>{au();setVol(VOL-.1)};$('vu').onclick=()=>{au();setVol(VOL+.1)};$('vv').textContent=Math.round(VOL*100);
 $('tg').onclick=()=>{tutor=tutor?0:1;prof.tutor=tutor;saveProfile(store,prof);$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF')};tutor=prof.tutor?1:0;$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF');
-$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvy').onclick=revWhy;$('rvr').onclick=revReply;$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
+$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle();else if(gmode=='online')netRematch();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvy').onclick=revWhy;$('rvr').onclick=revReply;$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
 $('hp').onclick=()=>scr('s-help',1);$('hb').onclick=()=>scr('s-help',0);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('keydown',e=>{if(e.key=='Escape'||e.key=='p'){paused?resume():pause()}else if(e.key=='u')undo();else if(e.key=='h')getHint()});

@@ -55,6 +55,40 @@ const res = () => { const r = {}; r.status = (c) => (r.code = c, r); r.json = (o
   r = res();
   await api({ method: 'POST', body: good, headers: {} }, r);
   eq('POST rate limited', r.code, 429);
+  // ---- signaling API ----
+  const sig = require('../api/signal.js');
+  const sm = (room, t, from, d) => ({ room, msg: { t, from, d: d || 'x' } });
+  eq('signal valid offer', sig.validateSignal(sm('AB12', 'offer', 'h', { sdp: 'x'.repeat(100) })), null);
+  eq('signal bad room', sig.validateSignal(sm('abc', 'offer', 'h')), 'bad room');
+  eq('signal bad type', sig.validateSignal(sm('AB12', 'move', 'h')), 'bad type');
+  eq('signal bad from', sig.validateSignal(sm('AB12', 'ice', 'z')), 'bad from');
+  eq('signal too big', sig.validateSignal(sm('AB12', 'offer', 'h', 'x'.repeat(9000))), 'too big');
+  const store = [];
+  global.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.includes('/incr/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/expire/')) return { ok: true, json: async () => ({ result: 1 }) };
+    if (u.includes('/rpush/')) { store.push(decodeURIComponent(u.split('/rpush/')[1].split('/').slice(1).join('/'))); return { ok: true, json: async () => ({ result: store.length }) }; }
+    if (u.includes('/lrange/')) {
+      const parts = u.split('/lrange/')[1].split('/');
+      const since = parseInt(parts[1], 10) || 0;
+      const slice = store.slice(since);
+      return { ok: true, json: async () => ({ result: slice }) };
+    }
+    return { ok: true, json: async () => ({ result: 1 }) };
+  };
+  r = res();
+  await sig({ method: 'POST', body: sm('AB12', 'offer', 'h', { sdp: 'S' }), headers: {} }, r);
+  eq('signal POST stores', [r.code, r.body, store.length], [200, { ok: true }, 1]);
+  r = res();
+  await sig({ method: 'GET', query: { room: 'AB12', since: '0' }, headers: {} }, r);
+  eq('signal GET replays', [r.code, r.body.ok, r.body.next, JSON.parse(r.body.msgs[0]).t], [200, true, 1, 'offer']);
+  r = res();
+  await sig({ method: 'GET', query: { room: 'AB12', since: '1' }, headers: {} }, r);
+  eq('signal GET cursor', [r.body.msgs.length, r.body.next], [0, 1]);
+  r = res();
+  await sig({ method: 'GET', query: { room: '!!' }, headers: {} }, r);
+  eq('signal GET bad room', r.code, 400);
   console.log(fail ? `\n${fail} FAILED` : '\nall passed');
   process.exit(fail ? 1 : 0);
 })();
