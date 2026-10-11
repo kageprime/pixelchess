@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#e8d8b0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23e8433a'/%3E%3Crect x='6' y='3' width='4' height='3' fill='%23fff3d1'/%3E%3Crect x='5' y='6' width='6' height='5' fill='%23fff3d1'/%3E%3Crect x='4' y='11' width='8' height='2' fill='%23fff3d1'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <style>:root{--bg:#e8d8b0;--bg2:#dcc994;--fg:#2a1d14;--panel:#fff3d1;--edge:#2a1d14;--accent:#e8433a;--bw:344px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1230;--bg2:#231741;--fg:#f5e9c8;--panel:#2e2250;--edge:#0b0616;--accent:#ffd23f}}
@@ -952,6 +954,7 @@ addEventListener('keydown',e=>{if(e.key=='Escape'||e.key=='p'){paused?resume():p
 let szT=0;const rsz=()=>{cancelAnimationFrame(szT);szT=requestAnimationFrame(()=>{size();bgBuild();bgTick()})};
 addEventListener('resize',rsz);addEventListener('orientationchange',()=>setTimeout(rsz,120));
 if(window.visualViewport)visualViewport.addEventListener('resize',rsz);
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 /* ---- scenes: a world behind the board, sky shifts from day to night as the game goes on ---- */
 const BD={d:['#a8683a','#b87a48','#8c5230','#b07343','#965c34'],l:['#efd9a7','#f8e9c6','#d6bd88','#f3e1b8','#e3cb97']};
 const hx=c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)];
