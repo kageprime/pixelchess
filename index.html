@@ -386,13 +386,16 @@ candy:{d:['#e56fa0','#f088b3','#c9568a','#ea7aa9','#d9619a'],l:['#fff0f5','#ffff
 ember:{d:['#7a2e1f','#933b28','#5e2216','#86331f','#6b281a'],l:['#e8b077','#f4c58f','#cf9760','#eebb82','#dca36a']},
 glacier:{d:['#4f8aa8','#63a0c0','#3d6f8a','#5a96b5','#477c99'],l:['#e3f4fa','#f5fcff','#c6e3ee','#eaf7fc','#d4ecf5']}};
 const TNAME={board:{scene:'SCENE',midnight:'MIDNIGHT',candy:'CANDY',ember:'EMBER',glacier:'GLACIER'},piece:{classic:'CLASSIC',jade:'JADE',gold:'GOLD',neon:'NEON'}};
-/* sprites and the empty board are baked once, then just blitted */
-const SC={},SW={},SB={};
-function applyPieces(){const t=PTH[prof.theme.piece]||PALDEF;Object.assign(PAL.w,t.w);Object.assign(PAL.b,t.b);for(const M of[SC,SW,SB])for(const k in M)delete M[k]}
+/* sprite pixel runs are cached as plain data and drawn with fillRect */
+const SC={},SW={},SB={},SRUN={};
+/* Sprites are drawn straight from their pixel data (no offscreen canvas cache): some mobile browsers
+   discard the contents of small offscreen canvases, which left the board with shadows but no pieces. */
+function runs(p,wh,bk){const k=p+(bk?'k':wh?'w':'');let R=SRUN[k];if(!R){R=[];const rows=SPR[p[1]],pal=PAL[p[0]],cc=ch=>wh?'#fff':bk&&ch=='e'?pal.f:pal[ch];
+rows.forEach((row,y)=>{let x=0;while(x<16){const ch=row[x];if(ch=='.'){x++;continue}const col=cc(ch);let e=x+1;while(e<16&&row[e]!='.'&&cc(row[e])==col)e++;R.push([x,y,e-x,col]);x=e}});SRUN[k]=R}return R}
+function blit(g,p,X,Y,wh,bk){for(const r of runs(p,wh,bk)){g.fillStyle=r[3];g.fillRect(X+r[0],Y+r[1],r[2],1)}}
+function applyPieces(){const t=PTH[prof.theme.piece]||PALDEF;Object.assign(PAL.w,t.w);Object.assign(PAL.b,t.b);for(const M of[SC,SW,SB,SRUN])for(const k in M)delete M[k]}
 const boardCols=()=>BTH[prof.theme.board]||(scn?SCENES[scn].board:null);
 function applyTheme(){applyPieces();mkbg(boardCols());if(b&&inGame)draw()}
-function baked(p,wh,bk){const M=bk?SB:wh?SW:SC;if(!M[p]){const rows=SPR[p[1]],pal=PAL[p[0]],c=document.createElement('canvas');c.width=16;c.height=rows.length;const g=c.getContext('2d');
-rows.forEach((row,y)=>{for(let x=0;x<16;x++){const ch=row[x];if(ch!='.'){g.fillStyle=wh?'#fff':bk&&ch=='e'?pal.f:pal[ch];g.fillRect(x,y,1,1)}}});M[p]=c}return M[p]}
 function mkbg(B){B=B||BD;bg=document.createElement('canvas');bg.width=bg.height=W;const g=bg.getContext('2d');
 for(let r=0;r<8;r++)for(let c=0;c<8;c++){const x=c*20,y=r*20,dk=(r+c)%2;
 g.fillStyle=dk?B.d[0]:B.l[0];g.fillRect(x,y,20,20);
@@ -416,7 +419,7 @@ function ln(x0,y0,x1,y1,col,th,dot){x0=Math.round(x0);y0=Math.round(y0);x1=Math.
 let dx=Math.abs(x1-x0),dy=-Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,er=dx+dy,i=0;ctx.fillStyle=col;
 for(;;){if(!dot||i%dot==0)ctx.fillRect(x0-(th>>1),y0-(th>>1),th,th);i++;if(x0==x1&&y0==y1)break;const e2=2*er;if(e2>=dy){er+=dy;x0+=sx}if(e2<=dx){er+=dx;y0+=sy}}}
 function ring(cx,cy,R,n,col,sz,sq){for(let i=0;i<n;i++){const g=i/n*6.283;px(cx+Math.cos(g)*R,cy+Math.sin(g)*R*sq,sz,sz,col)}}
-function spr(p,X,Y,wh,bk){ctx.drawImage(baked(p,wh,bk),Math.round(X)+2,Math.round(Y)+18-SPR[p[1]].length)}
+function spr(p,X,Y,wh,bk){blit(ctx,p,Math.round(X)+2,Math.round(Y)+18-SPR[p[1]].length,wh,bk)}
 function sh(X,Y){ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(Math.round(X)+3,Math.round(Y)+17,14,2);ctx.fillRect(Math.round(X)+5,Math.round(Y)+19,10,1)}
 function piece(r,c){const p=b[r][c];if(!p)return;
 if(an&&((r==an.r1&&c==an.c1)||(r==an.r2&&c==an.c2)))return;
@@ -440,7 +443,7 @@ else{const k=cl((te-900)/520);ang=90*k*k;
 if(te>=1420){if(!m.landed){m.landed=1;burst(X+dir*14,m.r*20+17,16,['#d8c8a0','#efe3c0','#fff'],{s:.9,up:.3,g:.03,life:520});shake=Math.max(shake,4);sfx('crash');sfx('thud');buzz(50)}
 ang=90-6*Math.max(0,1-(te-1420)/260)*Math.abs(Math.sin((te-1420)/40))}}
 if(ang<25)sh(m.c*20+jx,m.r*20);
-ctx.save();ctx.translate(X+jx,Y);ctx.rotate(dir*ang*Math.PI/180);ctx.drawImage(baked(p,te<900&&Math.floor(te/110)%2==0),-8,-SPR.K.length);ctx.restore()}
+ctx.save();ctx.translate(X+jx,Y);ctx.rotate(dir*ang*Math.PI/180);const kc=document.createElement('canvas');kc.width=16;kc.height=SPR.K.length;blit(kc.getContext('2d'),p,0,0,te<900&&Math.floor(te/110)%2==0);ctx.drawImage(kc,-8,-SPR.K.length);ctx.restore()}
 function draw(){if(!b)return;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,W);
 let ox=0,oy=0;if(an){ox=an.sx;oy=an.sy}else if(shake>.4){ox=Math.round((Math.random()*2-1)*shake);oy=Math.round((Math.random()*2-1)*shake)}
 ctx.translate(ox,oy);const mz=mateZoom();if(mz)ctx.transform(mz.s,0,0,mz.s,mz.x,mz.y);ctx.drawImage(bg,0,0);
@@ -595,7 +598,7 @@ function resume(){if(paused)pausedMs+=Date.now()-pauseAt;paused=false;scr('s-pau
 function showPromo(){const row=$('pr');row.innerHTML='';
 for(const t of 'QRBN'){const bt=document.createElement('button');bt.className='pc';bt.setAttribute('aria-label',{Q:'Queen',R:'Rook',B:'Bishop',N:'Knight'}[t]);
 const cn=document.createElement('canvas');cn.width=cn.height=18;cn.style.width=cn.style.height='54px';
-cn.getContext('2d').drawImage(baked(turn+t),2,18-SPR[t].length);bt.appendChild(cn);
+blit(cn.getContext('2d'),turn+t,2,18-SPR[t].length);bt.appendChild(cn);
 bt.onclick=()=>{const m=pend;pend=null;scr('s-promo',0);if(m)play(m.r,m.c,m.y,m.x,t)};row.appendChild(bt)}
 scr('s-promo',1)}
 function showOver(mate){const w=turn=='w'?'b':'w';$('ot').textContent=mate?'CHECKMATE':'STALEMATE';
@@ -615,7 +618,7 @@ if(unl){portrait(ouc.getContext('2d'),unl,'h',false);ouc.classList.add('on');nx.
 scr('s-over',1);sfx(unl?'unlock':mate&&(w=='w'||!ai)?'win':'lose')}
 /* ---- pixel art for title / game-over ---- */
 const A=$('art').getContext('2d'),O=$('oart').getContext('2d');
-function sp2(c,p,X,Y){const rows=SPR[p[1]];c.fillStyle='rgba(0,0,0,.28)';c.fillRect(X+3,Y+17,14,2);c.fillRect(X+5,Y+19,10,1);c.drawImage(baked(p),X+2,Y+18-rows.length)}
+function sp2(c,p,X,Y){const rows=SPR[p[1]];c.fillStyle='rgba(0,0,0,.28)';c.fillRect(X+3,Y+17,14,2);c.fillRect(X+5,Y+19,10,1);blit(c,p,X+2,Y+18-rows.length)}
 const conf=Array.from({length:24},(_,i)=>({x:(i*37)%64,y:(i*13)%48,v:1+i%3,c:['#ffd23f','#e8433a','#7fd0ff','#fff','#2fbf6a'][i%5]}));
 function artTick(){fr++;
 if($('s-title').classList.contains('on')){A.clearRect(0,0,160,48);
