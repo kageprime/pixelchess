@@ -175,6 +175,21 @@ const TU = new Function('ev,atk,threats,legal,apply,gen,V,inCheck,all,prof,PW',
   eq('tutor: blunder has reasons', ge.why.length > 0, true);
 }
 
+// --- world-music queue: shuffle keeps the set, step advances, transpose is exact ---
+const YT = new Function('const BUS={on(){}};const document={addEventListener(){}};const VOL=0.7;const $=()=>null;' + html.split('/*YT*/')[1].split('/*YTEND*/')[0] + ';return{ytShuffle,yqStep,TP,YT_LIST}')();
+eq('queue step wraps', [YT.yqStep(0, 3), YT.yqStep(2, 3), YT.yqStep(0, 1)], [1, 0, 0]);
+eq('transpose exact', [YT.TP(0), YT.TP(12), YT.TP(-12)], [1, 2, 0.5]);
+{
+  const seen = new Set();
+  for (let i = 0; i < 30; i++) seen.add(YT.ytShuffle([0, 1, 2, 3].slice()).join());
+  eq('shuffle keeps every track', YT.ytShuffle([0, 1, 2].slice()).sort().join(), '0,1,2');
+  eq('shuffle varies order', seen.size > 1, true);
+  const bad = [];
+  for (const [k, L] of Object.entries(YT.YT_LIST)) for (const t of L) if (!/^[A-Za-z0-9_-]{11}$/.test(t.id) || !t.title || !t.artist) bad.push(k);
+  eq('all track ids + credits valid', bad, []);
+  eq('three worlds have 3+ tracks', ['moss', 'vex', 'dune'].every(k => YT.YT_LIST[k].length >= 3), true);
+}
+
 // --- threats: which pieces should tremble ---
 const T = f => [...E.threats(fen(f)[0])].sort();
 eq('no threats at the start', [...E.threats(E.newBoard())].length, 0);
