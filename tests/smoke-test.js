@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
     const pg = await br.newPage({ viewport: vp, hasTouch: false });
     pg.on('pageerror', e => errs.push(name + ': ' + e.message));
     pg.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load/.test(m.text())) errs.push(name + ' console: ' + m.text()); });
-    await pg.goto('file://'+__dirname+'/../index.html');
+    await pg.goto('file://'+__dirname+'/../chess/index.html');
     await pg.click('[data-m="1"]');
     ok(name + ' opponent screen shows 3 cards', (await pg.locator('.oc').count()) === 3);
     const ocb = await pg.locator('.oc').last().boundingBox();
@@ -57,7 +57,7 @@ const { chromium } = require('playwright');
   // 2 player: capture tray + undo of single ply
   const pg = await br.newPage({ viewport: { width: 390, height: 780 } });
   pg.on('pageerror', e => errs.push('2p: ' + e.message));
-  await pg.goto('file://'+__dirname+'/../index.html');
+  await pg.goto('file://'+__dirname+'/../chess/index.html');
   await pg.click('[data-m="2"]');
   await pg.evaluate(() => { fx = false; snd = false; });
   const mv = async (a, b2) => { await pg.evaluate(([a, b2]) => { const q = s => [8 - +s[1], 'abcdefgh'.indexOf(s[0])]; const [r, c] = q(a), [y, x] = q(b2); play(r, c, y, x, 'Q'); }, [a, b2]); };

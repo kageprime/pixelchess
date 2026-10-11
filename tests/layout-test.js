@@ -5,7 +5,7 @@ const S='';
 const errs=[];let fails=0;const ok=(n,c,x='')=>{if(!c)fails++;console.log((c?'ok   ':'FAIL ')+n+(c?'':'  '+x))};
 for(const [name,vp,oi] of [['1920',{width:1920,height:1080},1],['1280',{width:1280,height:720},0],['1024',{width:1024,height:768},2],['1000',{width:1000,height:700},1]]){
  const pg=await br.newPage({viewport:vp});pg.on('pageerror',e=>errs.push(name+': '+e.message));
- await pg.goto('file://'+__dirname+'/../index.html');await pg.click('[data-m="1"]');
+ await pg.goto('file://'+__dirname+'/../chess/index.html');await pg.click('[data-m="1"]');
  await pg.screenshot({path:S+`w-${name}-select.png`});
  if(oi)await pg.click('#ex');await pg.locator('.oc').nth(oi).click();await pg.waitForTimeout(500);
  ok(name+' wide class on',await pg.evaluate(()=>$('app').classList.contains('wd')));

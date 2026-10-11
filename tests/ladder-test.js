@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 (async () => {
   const br = await chromium.launch(); const errs = []; let fails = 0;
   const ok = (n, c, x = '') => { if (!c) fails++; console.log((c ? 'ok   ' : 'FAIL ') + n + (c ? '' : '  ' + x)); };
-  const url = 'file://' + __dirname + '/../index.html';
+  const url = 'file://' + __dirname + '/../chess/index.html';
   // back-rank mate in one for White: Ra1-a8#
   const setMate = pg => pg.evaluate(() => {
     const e = Array.from({ length: 8 }, () => Array(8).fill(null));
