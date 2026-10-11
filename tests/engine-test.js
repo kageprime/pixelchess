@@ -94,7 +94,7 @@ for (const [id, M] of Object.entries(MU.MUS)) {
 }
 
 // --- daily puzzles: every entry is a genuine mate-in-1 with no king captures ---
-const ZB = new Function('const BUS={on(){}};' + html.split('/*PUZ*/')[1].split('/*PUZEND*/')[0] + ';return{PUZ,fenParse,recordPuzzle,puzIdx}')();
+const ZB = new Function('const BUS={on(){}};' + html.split('/*PUZ*/')[1].split('/*PUZEND*/')[0] + ';return{PUZ,fenParse,recordPuzzle,puzIdx,puzStamp}')();
 eq('puzzles: 27 entries', ZB.PUZ.length, 27);
 {
   const bad = [];
@@ -128,6 +128,7 @@ eq('puzzles: 27 entries', ZB.PUZ.length, 27);
   const qp = { puz: { streak: 0, best: 0, last: '', wins: 0 }, xp: 0 };
   ZB.recordPuzzle(qp, '2026-10-10', true);
   eq('puzzle solve gives 25 XP', qp.xp, 25);
+  eq('stamps by solve time', [ZB.puzStamp(12), ZB.puzStamp(29), ZB.puzStamp(30), ZB.puzStamp(119), ZB.puzStamp(120), ZB.puzStamp(600)], ['TIMER LORD', 'TIMER LORD', 'ADEPT', 'ADEPT', 'GRINDER', 'GRINDER']);
 }
 
 // --- blitz clocks: display format ---
@@ -202,7 +203,7 @@ eq('queen attacked by a defended bishop trembles', T('4k3/8/8/3q4/8/5B2/8/4K3 b 
 eq('kings never tremble', T('4k3/8/8/8/8/8/4q3/4K3 w - -').includes('7,4'), false);
 
 // --- profile / ladder rules ---
-const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle}')();
+const P = new Function(html.split('/*PROF*/')[1].split('/*PROFEND*/')[0] + ';return{loadProfile,saveProfile,recordResult,newProfile,isUnlocked,PKEY,themeUnlocked,setTheme,streakBoard,MIN_FAST,THEME_REQ,xpTitle,mkInitials}')();
 const mem = () => { const d = {}; return { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d }; };
 const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies: 41, ms: 90000, caps: 3, left: 9, undos: 0, san: 'e4', date: 1 }, o);
 {
@@ -255,6 +256,16 @@ const R = (id, res, o = {}) => Object.assign({ id, res, mate: res !== 'd', plies
     const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
     P.saveProfile(st, p);
     eq('pid survives a reload', P.loadProfile(st).pid, p.pid);
+  }
+  eq('initials from words', [P.mkInitials('Ade Ola Musa'), P.mkInitials('Kage Prime'), P.mkInitials('Bo'), P.mkInitials(''), P.mkInitials('a!@#')], ['AOM', 'KPA', 'BOB', 'YOU', 'AAA']);
+  {
+    const d = {};
+    const st = { getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, d };
+    st.d[P.PKEY] = JSON.stringify({ v: 1, name: 'Kage Prime', initials: 'k@p1!' });
+    const q = P.loadProfile(st);
+    eq('initials sanitised, name kept', [q.initials, q.name], ['KP1', 'Kage Prime']);
+    st.d[P.PKEY] = JSON.stringify({ v: 1, name: 'Bo' });
+    eq('initials derive when missing', P.loadProfile(st).initials, 'BOB');
   }
   o = P.recordResult(p, R('dune', 'w'));
   eq('ladder cleared only reported the first time', o.cleared, false);

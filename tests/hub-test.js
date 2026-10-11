@@ -123,6 +123,13 @@ const server = http.createServer((req, res) => {
     ok('sound choice survives a reload', (await pg.textContent('#snd')) === 'SOUND: OFF');
     await pg.click('#snd');
 
+    // floor look: marquee strip, lit chess cabinet, initials chip
+    ok('marquee strip names the ritual', /ONE CREDIT A DAY/.test(await pg.locator('.top-strip').innerText()));
+    ok('chess cabinet is lit', await pg.evaluate(() => document.querySelector('[data-game="chess"]').classList.contains('lit')));
+    await pg.evaluate(() => localStorage.setItem('pixelchess.v1', JSON.stringify({ v: 1, name: 'Kage Prime' })));
+    await pg.reload();
+    ok('chip derives initials from the name', (await pg.textContent('#ci')) === 'KPA');
+
     // chess link works
     await pg.locator('.card').first().click();
     await pg.waitForURL('**/chess/index.html');

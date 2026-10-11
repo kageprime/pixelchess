@@ -299,7 +299,11 @@ if(!atk(b,r,c,p[0]).length||Math.min(...a)<V[p[1]])s.add(r+','+c)}return s}
 const OPP_ORDER=['moss','vex','dune'],PKEY='pixelchess.v1',MIN_FAST=10,TOPN=5;
 const THEME_REQ={board:{scene:null,midnight:{beat:'moss'},candy:{beat:'vex'},ember:{beat:'dune'},glacier:{streak:3}},piece:{classic:null,jade:{beat:'vex'},gold:{beat:'dune'},neon:{streak:5}}};
 const mkPid=()=>{let s='';for(let i=0;i<8;i++)s+='0123456789abcdef'[Math.random()*16|0];return s};
-const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0,pid:mkPid()});
+const mkInitials=(name)=>{name=String(name||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();if(!name)return'YOU';
+let s=name.split(/\s+/).map(w=>w[0]).join('');const w0=s;
+if(s.length<3){const flat=name.replace(/\s+/g,'');for(const ch of flat){if(s.length>=3)break;if(!s.includes(ch))s+=ch}
+while(s.length<3)s+=w0[s.length%w0.length]}return s.slice(0,3)};
+const newProfile=()=>({v:1,unlocked:['moss'],rec:{},streak:0,bestStreak:0,games:[],total:{w:0,l:0,d:0},theme:{board:'scene',piece:'classic'},top:{fast:{},mate:{},streaks:[]},vol:.7,puz:{streak:0,best:0,last:'',wins:0},xp:0,name:'YOU',tutor:0,pid:mkPid(),initials:''});
 const nn=(x,d=0)=>Number.isFinite(x)&&x>=0?Math.floor(x):d;
 const LESS={fast:(e,x)=>e.ms<x.ms,mate:(e,x)=>e.moves<x.moves||(e.moves==x.moves&&e.ms<x.ms),streaks:(e,x)=>e.n>x.n};
 /* insert into a top list (best first, max TOPN). Returns the 1-based rank, or 0 if it did not make the list. */
@@ -332,6 +336,7 @@ if(p.bestStreak>p.streak)p.top.streaks.push({n:p.bestStreak,date:0})}
 if(o.theme&&typeof o.theme=='object')for(const k of['board','piece'])if(typeof o.theme[k]=='string'&&themeUnlocked(p,k,o.theme[k]))p.theme[k]=o.theme[k];
 p.vol=(typeof o.vol=='number'&&o.vol>=0&&o.vol<=1)?o.vol:.7;
 p.name=(typeof o.name=='string'?o.name:'YOU').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';
+p.initials=(typeof o.initials=='string'?o.initials:'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3)||mkInitials(p.name);
 p.tutor=o.tutor?1:0;
 /* fields owned by the arcade hub (shared/shared.js): carried through so a chess save never erases them */
 if(typeof o.xp=='number')p.xp=o.xp;if(o.byGame&&typeof o.byGame=='object'&&!Array.isArray(o.byGame))p.byGame=o.byGame;
@@ -377,11 +382,13 @@ const y=new Date(Date.parse(day+'T00:00:00Z')-864e5).toISOString().slice(0,10);
 p.puz.streak=(p.puz.last==y)?p.puz.streak+1:1;
 if(p.puz.streak>p.puz.best)p.puz.best=p.puz.streak;
 p.puz.last=day;p.puz.wins=(p.puz.wins||0)+1;p.xp=(p.xp||0)+25;return{again:false,streak:p.puz.streak,first:!!first}}
-let puzSide='w',puzSnap=null,puzTries=0,puzDayStr='',puzDone=false;
+const puzStamp=s=>s<30?'TIMER LORD':s<120?'ADEPT':'GRINDER';
+let puzSide='w',puzSnap=null,puzTries=0,puzDayStr='',puzDone=false,puzT0=0,puzLastSec=0,puzLastStamp='';
 function puzLabel(){const d=$('dp');if(d)d.textContent='DAILY PUZZLE'+(prof.puz&&prof.puz.streak?' - '+prof.puz.streak:'')}
 function rankLabel(){const t=$('trk');if(t)t.textContent='RANK: '+xpTitle(prof.xp||0)+' - '+(prof.xp||0)+' XP'}
-function startPuzzle(){au();const day=puzDay(Date.now()),fen=PUZ[puzIdx(day)],[nb,side]=fenParse(fen);
-ai=false;gmode='puzzle';puzSide=side;puzDayStr=day;puzTries=0;puzDone=!!(prof.puz&&prof.puz.last==day);
+function startPuzzle(day){au();day=(day&&/^\d{4}-\d{2}-\d{2}$/.test(day))?day:puzDay(Date.now());
+const fen=PUZ[puzIdx(day)],[nb,side]=fenParse(fen);
+ai=false;gmode='puzzle';puzSide=side;puzDayStr=day;puzTries=0;puzT0=Date.now();puzDone=!!(prof.puz&&prof.puz.last==day);
 puzSnap=nb.map(R=>R.slice());puzSnap.cr=Object.assign({},nb.cr);
 inGame=true;paused=false;['s-title','s-opp','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
 $('app').classList.add('on');setupOpp();sceneSet();
@@ -389,13 +396,17 @@ $('nb').textContent=side=='b'?'BLACK - YOU':'BLACK';$('nwh').textContent=side=='
 size();undosLeft=0;recorded=true;lastOut=null;t0g=Date.now();pausedMs=0;an=null;sa=null;pp=[];drag=null;pend=null;aiPend=null;aiWait=0;reqId++;shake=0;flash=0;chkCol=null;gid++;
 b=nb;turn=side;sel=null;moves=[];last=null;over=false;hist=[];hint=null;hop=null;mateAnim=null;status();draw();BUS.emit('newgame');
 $('bub').classList.add('on');
-bubText(puzDone?'ALREADY SOLVED - STREAK SAFE':'MATE IN 1 - YOU PLAY '+(side=='w'?'WHITE':'BLACK'))}
+bubText(puzDone?'ALREADY SOLVED - STREAK SAFE':"TODAY'S CREDIT: MATE IN 1 - YOU PLAY "+(side=='w'?'WHITE':'BLACK'))}
 /* puzzle moves: same legality, but the enemy king can never be captured */
 function puzMoves(r,c){const ms=legal(b,r,c);if(gmode!='puzzle')return ms;const foe=b[r][c][0]=='w'?'b':'w';
 return ms.filter(m=>b[m[0]][m[1]]!=foe+'K')}
 function puzAfter(){puzTries++;
-if(over&&chkCol){const o=recordPuzzle(prof,puzDayStr,puzTries==1);saveProfile(store,prof);puzDone=true;puzLabel();
-bubText(o.again?'SOLVED AGAIN!':('SOLVED! STREAK '+o.streak+(puzTries==1?' FIRST TRY!':'')));return}
+if(over&&chkCol){const secs=Math.max(1,Math.round((Date.now()-puzT0)/1000)),stamp=puzStamp(secs);
+puzLastSec=secs;puzLastStamp=stamp;
+const o=recordPuzzle(prof,puzDayStr,puzTries==1);
+if(!o.again&&(prof.puz.bestMs==null||secs<prof.puz.bestMs))prof.puz.bestMs=secs;
+saveProfile(store,prof);puzDone=true;puzLabel();
+bubText(o.again?('SOLVED AGAIN IN '+secs+'S!'):('SOLVED IN '+secs+'S - '+stamp+'! STREAK '+o.streak+(puzTries==1?' FIRST TRY!':'')));return}
 hist.pop();b=puzSnap.map(R=>R.slice());b.cr=Object.assign({},puzSnap.cr);b.ep=null;turn=puzSide;last=null;sel=null;moves=[];hint=null;over=false;status();draw();refreshUI();
 bubText('NOT MATE - TRY AGAIN');buzz(30)}
 /*PUZEND*/
@@ -978,13 +989,22 @@ scr('s-over',1);sfx(unl?'unlock':(mate||flag)&&(gmode=='online'?w==p2p.side:(w==
 /* ---- share card: snapshot the result + board as a PNG, share or download ---- */
 async function shareCard(silent){if(!b)return null;
 try{
-const S=3,BW=160*S,HH=64,cn=document.createElement('canvas');cn.width=BW;cn.height=HH+160*S;const g=cn.getContext('2d');g.imageSmoothingEnabled=false;
-g.fillStyle='#fff3d1';g.fillRect(0,0,cn.width,cn.height);g.fillStyle='#2a1d14';g.fillRect(0,0,cn.width,4);g.fillRect(0,HH+160*S-4,cn.width,4);
-g.fillStyle='#e8433a';g.font='16px "Press Start 2P",monospace';g.textAlign='center';
-g.fillText(($('ot')&&$('s-over').classList.contains('on')?$('ot').textContent:'PIXEL CHESS').slice(0,20),BW/2,26);
-g.fillStyle='#2a1d14';g.font='8px "Press Start 2P",monospace';
-g.fillText(($('os')&&$('s-over').classList.contains('on')?$('os').textContent:'').slice(0,34)+'  '+Math.ceil(hist.length/2)+' MOVES',BW/2,48);
-try{g.drawImage(cv,0,HH,BW,160*S)}catch(e){}
+const ini=prof.initials||mkInitials(prof.name),rank=xpTitle(prof.xp||0);
+const isPuz=gmode=='puzzle',day=isPuz?puzDayStr:puzDay(Date.now());
+const head=isPuz?('MATE IN 1 \u00b7 '+day):(($('ot')&&$('s-over').classList.contains('on')?$('ot').textContent:'PIXEL CHESS').slice(0,22));
+const mid=isPuz?(puzDone?('SOLVED IN '+puzLastSec+'S - '+puzLastStamp):'UNSOLVED'):(($('os')&&$('s-over').classList.contains('on')?$('os').textContent:'').slice(0,30)+'  '+Math.ceil(hist.length/2)+' MOVES');
+const foot='STREAK '+(prof.puz?prof.puz.streak:0)+' \u00b7 '+rank+(isPuz?' \u00b7 +25 XP':'');
+const W=480,H=300,cn=document.createElement('canvas');cn.width=W;cn.height=H;const g=cn.getContext('2d');
+g.fillStyle='#f5e9c8';g.fillRect(0,0,W,H);g.fillStyle='#2a1d14';g.fillRect(0,0,W,5);g.fillRect(0,H-5,W,5);
+g.fillStyle='#e8a013';g.fillRect(0,0,64,H);
+g.save();g.translate(32,H/2);g.rotate(-Math.PI/2);g.fillStyle='#2a1d14';g.font='16px "Press Start 2P",monospace';g.textAlign='center';g.fillText('CHESS',0,6);g.restore();
+g.textAlign='left';g.fillStyle='#2a1d14';g.font='11px "Press Start 2P",monospace';
+g.fillText(head.slice(0,26),88,52);
+g.fillStyle='#8a6d3b';g.font='8px "Press Start 2P",monospace';g.fillText('INITIALS',88,86);
+g.fillStyle='#2a1d14';g.font='44px "Press Start 2P",monospace';g.fillText(ini,86,138);
+g.font='11px "Press Start 2P",monospace';g.fillText(mid.slice(0,30),88,182);
+g.font='16px "Press Start 2P",monospace';g.fillStyle='#1f7a3c';g.fillText(isPuz?(puzDone?puzLastStamp:'--'):($('ot')&&$('s-over').classList.contains('on')?$('ot').textContent:'').slice(0,12),88,224);
+g.fillStyle='#2a1d14';g.font='9px "Press Start 2P",monospace';g.fillText(foot.slice(0,40),88,262);
 if(silent)return cn.toDataURL('image/png');
 const blob=await new Promise(r=>cn.toBlob(r,'image/png'));if(!blob)return null;
 const f=new File([blob],'pixelchess.png',{type:'image/png'});
@@ -1177,7 +1197,7 @@ let h='';const t=prof.total;
 if(pfTab==0){h+='<div class="px ps"><h3>ALL LADDER GAMES</h3>'+ln('WINS / LOSSES / DRAWS',t.w+' / '+t.l+' / '+t.d)+ln('WIN STREAK NOW',prof.streak)+ln('BEST WIN STREAK',prof.bestStreak)+ln('RANK',xpTitle(prof.xp||0)+' - '+(prof.xp||0)+' XP')+ln('PUZZLE STREAK',prof.puz.streak+' (BEST '+prof.puz.best+')')+'</div>';
 h+='<div class="px ps"><h3>BY OPPONENT</h3>';
 for(const o of OPPS){if(!isUnlocked(prof,o.id)){h+=ln('???','LOCKED');continue}const r=prof.rec[o.id]||{w:0,l:0,d:0};h+=ln(o.name,'W'+r.w+' L'+r.l+' D'+r.d)}h+='</div>';
-h+='<div class="px ps"><h3>WORLD BOARD NAME</h3><div class="ln"><span>NAME</span><span><input id="pfname" maxlength="12" value="'+prof.name+'"></span></div></div>'}
+h+='<div class="px ps"><h3>WORLD BOARD NAME</h3><div class="ln"><span>NAME</span><span><input id="pfname" maxlength="12" value="'+prof.name+'"></span></div><div class="ln"><span>INITIALS</span><span><input id="pfini" maxlength="3" value="'+(prof.initials||mkInitials(prof.name))+'"></span></div></div>'}
 else if(pfTab==1){const L=streakBoard(prof);h+='<div class="px ps"><h3>BEST WIN STREAKS</h3>';
 if(!L.length)h+='<div class="ln"><span>NO STREAKS YET - WIN A LADDER GAME</span></div>';
 L.forEach((e,i)=>{h+=ln((i+1)+'. '+e.n+(e.n==1?' WIN':' WINS'),e.cur?'RUNNING NOW':fmtD(e.date))});h+='</div>'}
@@ -1188,7 +1208,7 @@ if(!L.length)h+='<div class="ln"><span>'+(fast?'NO QUALIFYING WIN YET':'NO WIN Y
 L.forEach((e,i)=>{const u=e.undos?' U'+e.undos:'';h+=fast?ln((i+1)+'. '+fmtT(e.ms),Math.ceil(e.plies/2)+' MOVES'+u+' - '+fmtD(e.date)):ln((i+1)+'. '+e.moves+' MOVES',fmtT(e.ms)+u+' - '+fmtD(e.date))});h+='</div>'}
 h+='<p class="nt">'+(fast?'ONLY WINS OF '+MIN_FAST+'+ MOVES COUNT.<br>':'')+'U = UNDOS USED IN THAT GAME</p>'}
 if(!store)h+='<p class="nt">PROGRESS IS NOT SAVED ON THIS DEVICE</p>';
-$('pbody').innerHTML=h;const fi=$('pfname');if(fi)fi.onchange=()=>{prof.name=(fi.value||'').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';fi.value=prof.name;saveProfile(store,prof)}}
+$('pbody').innerHTML=h;const fi=$('pfname');if(fi)fi.onchange=()=>{prof.name=(fi.value||'').replace(/[^A-Za-z0-9 _-]/g,'').slice(0,12)||'YOU';fi.value=prof.name;saveProfile(store,prof)};const gi=$('pfini');if(gi)gi.onchange=()=>{prof.initials=(gi.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3)||mkInitials(prof.name);gi.value=prof.initials;saveProfile(store,prof)}}
 $('th').onclick=()=>{scr('s-title',0);renderThemes();scr('s-themes',1)};$('thb').onclick=()=>{scr('s-themes',0);scr('s-title',1)};
 $('pf').onclick=()=>{scr('s-title',0);renderProf();scr('s-prof',1)};$('pfb').onclick=()=>{scr('s-prof',0);scr('s-title',1)};
 /* ---- wiring ---- */
@@ -1211,7 +1231,7 @@ $('sheet').addEventListener('click',e=>{if(e.target.id=='sheet')$('sheet').class
 sh.addEventListener('touchstart',e=>{y0=e.touches[0].clientY},{passive:true});
 sh.addEventListener('touchend',e=>{if(y0!=null&&e.changedTouches[0].clientY-y0>60)sh.classList.remove('on');y0=null},{passive:true})})();
 $('tg').onclick=()=>{tutor=tutor?0:1;prof.tutor=tutor;saveProfile(store,prof);$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF')};tutor=prof.tutor?1:0;$('tg').textContent='TUTOR: '+(tutor?'ON':'OFF');
-$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle();else if(gmode=='online')netRematch();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvy').onclick=revWhy;$('rvr').onclick=revReply;$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
+$('pz').onclick=pause;$('un').onclick=undo;$('hn').onclick=getHint;$('rs').onclick=resume;$('rt').onclick=$('rm').onclick=()=>{if(gmode=='puzzle')startPuzzle(puzDayStr);else if(gmode=='online')netRematch();else startGame(ai?1:2)};$('rv').onclick=revEnter;$('rvp').onclick=()=>revStep(-1);$('rvn').onclick=()=>revStep(1);$('rvy').onclick=revWhy;$('rvr').onclick=revReply;$('rvx').onclick=revExit;$('qt').onclick=$('mn').onclick=toTitle;
 $('hp').onclick=()=>scr('s-help',1);$('hb').onclick=()=>scr('s-help',0);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('keydown',e=>{if(e.key=='Escape'||e.key=='p'){paused?resume():pause()}else if(e.key=='u')undo();else if(e.key=='h')getHint()});
@@ -1424,4 +1444,5 @@ if(Math.sin(bgT*.12+s.ph)<-.55)continue;const X=Math.round(s.x),Y=Math.round(s.y
 if(s.big){bx.fillRect(X-1,Y,3,1);bx.fillRect(X,Y-1,1,3)}}}
 let bgI=0;function bgStart(){bgBuild();bgTick();clearInterval(bgI);if(!matchMedia('(prefers-reduced-motion:reduce)').matches)bgI=setInterval(bgTick,110)}
 applyPieces();mkbg(boardCols());size();init();scr('s-title',1);bgStart();
+try{const dd=new URLSearchParams(location.search).get('d');if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(dd))startPuzzle(dd)}catch(e){}
 </script></body></html>
