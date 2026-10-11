@@ -15,6 +15,10 @@ Audio checklist (needs a real speaker - cannot be heard in my test environment)
 5. Pause: music should duck to a murmur and come back on Resume (both chiptune and YouTube).
 6. SND OFF (menu or pause) silences everything, including the YouTube player;
    SND ON during a game brings the world track back.
+   The bottom player bar hides with SND OFF and returns with SND ON.
+   NEXT in the bar (or its card) jumps to another track from the same world -
+   no repeats until every track has played. When YouTube is blocked the
+   chiptune loop keeps playing with a slightly different key each game.
 7. Checkmate: the music stops (YouTube pauses too) and the win or lose sting plays on the result screen.
 8. Quit to menu or 2 PLAYERS: no music (2-player mode has no scene).
 
