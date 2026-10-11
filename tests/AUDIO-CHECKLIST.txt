@@ -1,14 +1,20 @@
 Audio checklist (needs a real speaker - cannot be heard in my test environment)
 
-1. VS CPU > pick an opponent. Music should fade in within ~1 second.
-   Mossback = bouncy major tune, Lady Vex = slinky minor groove, Old Dune = slow desert drone.
+1. VS CPU > pick an opponent. A YouTube track should start within a few seconds
+   (needs internet - first tap unlocks autoplay):
+   Mossback = Mavo - Shakabulizzy, Lady Vex = Zaylevelten - Guide Pass (prod. Tenski),
+   Old Dune = Tochi Bedford - impossible.
+   A small credit + mini player sits bottom-right (kept visible per YouTube ToS).
+   The old chiptune loop plays first, then fades out once the YouTube track is audible.
+   Offline / embed blocked: chiptune keeps playing as fallback (same tunes as before).
 2. Move a piece. The thud should match the world: wood clack (garden), stone tick (hall), soft sand (desert).
 3. Put a king in check (or lose 3+ points of material). A pulsing arpeggio and low throb should fade in over a few moves,
    then fade out when things calm down.
 4. Play a long game: Mossback gets crickets once the sky turns to night; Lady Vex has torch crackle; Old Dune has wind gusts.
-5. Pause: music should duck to a murmur and come back on Resume.
-6. SND OFF (menu or pause) silences everything; SND ON during a game brings the music back.
-7. Checkmate: the music stops and the win or lose sting plays on the result screen.
+5. Pause: music should duck to a murmur and come back on Resume (both chiptune and YouTube).
+6. SND OFF (menu or pause) silences everything, including the YouTube player;
+   SND ON during a game brings the world track back.
+7. Checkmate: the music stops (YouTube pauses too) and the win or lose sting plays on the result screen.
 8. Quit to menu or 2 PLAYERS: no music (2-player mode has no scene).
 
 If anything is too loud or too quiet, the levels are the numbers in the MUS table (lv = lead volume) and bus gain .7 in musStart.
