@@ -4,7 +4,8 @@ Audio checklist (needs a real speaker - cannot be heard in my test environment)
    (needs internet - first tap unlocks autoplay):
    Mossback = Mavo - Shakabulizzy, Lady Vex = Zaylevelten - Guide Pass (prod. Tenski),
    Old Dune = Tochi Bedford - impossible.
-   A small credit + mini player sits bottom-right (kept visible per YouTube ToS).
+   A small hidden player streams the audio (no video box on screen); only the
+   credit line shows bottom-right.
    The old chiptune loop plays first, then fades out once the YouTube track is audible.
    Offline / embed blocked: chiptune keeps playing as fallback (same tunes as before).
 2. Move a piece. The thud should match the world: wood clack (garden), stone tick (hall), soft sand (desert).

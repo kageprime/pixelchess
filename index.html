@@ -157,11 +157,10 @@ button:disabled{opacity:.35;pointer-events:none}
 /* YouTube world music: small visible player + credit (kept visible per YouTube ToS) */
 #yt-wrap{position:fixed;right:8px;bottom:8px;z-index:10;display:none;flex-direction:column;gap:4px;align-items:flex-end;opacity:.94}
 #yt-wrap.on{display:flex}
-#yt-player{width:120px;height:68px;background:#000;box-shadow:0 0 0 2px var(--edge)}
-#yt-player iframe{width:120px;height:68px;border:0;display:block}
+#yt-player{position:fixed;left:-10px;bottom:-10px;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none;background:#000}
+#yt-player iframe{width:2px;height:2px;border:0;display:block}
 #yt-credit{font-size:7px;line-height:1.5;background:var(--panel);color:var(--fg);padding:4px 6px;max-width:180px;text-align:right;box-shadow:0 -2px 0 0 var(--edge),0 2px 0 0 var(--edge),-2px 0 0 0 var(--edge),2px 0 0 0 var(--edge)}
 #yt-credit a{color:var(--accent)}
-@media (min-width:1000px){#yt-player,#yt-player iframe{width:160px;height:90px}}
 </style></head><body>
 <canvas id="bgc" aria-hidden="true"></canvas>
 <div id="yt-wrap" aria-label="World music player"><div id="yt-player"></div><div id="yt-credit"></div></div>
@@ -918,7 +917,7 @@ function ytMk(){try{const pv={autoplay:0,controls:1,disablekb:1,fs:0,rel:0,modes
 if(/^https?:/.test(location.origin||''))pv.origin=location.origin;
 const prev=window.onYouTubeIframeAPIReady;
 window.onYouTubeIframeAPIReady=()=>{try{prev&&prev()}catch(e){}};
-ytPlayer=new window.YT.Player('yt-player',{width:'120',height:'68',playerVars:pv,events:{
+ytPlayer=new window.YT.Player('yt-player',{width:'2',height:'2',playerVars:pv,events:{
 onReady:()=>{ytReady=true;try{ytPlayer.setVolume(YT_VOL)}catch(e){}if(ytWanted&&snd)ytLoad()},
 onStateChange:ev=>{try{
 const Y=window.YT;
