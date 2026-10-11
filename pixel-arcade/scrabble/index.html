@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Scrabble</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231f7a5c'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3e3b0'/%3E%3Ctext x='8' y='12' font-family='Georgia,serif' font-size='10' font-weight='bold' text-anchor='middle' fill='%232b2118'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../shared/arcade.css">
+<style>
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{text-align:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.scr{display:none;position:fixed;inset:0;z-index:5;flex-direction:column;align-items:center;justify-content:center;overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px));background:var(--bg)}
+.scr.on{display:flex}
+.scr.dim{background:rgba(8,4,16,.86)}
+.logo{font-size:clamp(24px,9vw,44px);line-height:1.2;margin:10px 0 6px;text-shadow:4px 4px 0 var(--accent),8px 8px 0 var(--edge)}
+.logo span{color:var(--accent);text-shadow:4px 4px 0 var(--edge)}
+.sub{font-size:8px;line-height:2;margin:0 0 14px}
+.card{width:min(88vw,340px);padding:16px 14px;margin:10px 0;color:var(--fg)}
+.card h2{font-size:14px;line-height:1.5;margin:4px 0 12px;text-shadow:2px 2px 0 var(--accent)}
+.card p{font-size:8px;line-height:2.1;margin:8px 0;text-align:left}
+.card .big{margin:10px auto}
+a.lnk,label.lnk{display:inline-block;text-decoration:none;color:var(--fg);padding:12px 8px;margin:8px 6px;cursor:pointer;font-size:8px;min-height:44px;line-height:20px}
+label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
+#dc{font-size:7px;line-height:1.9;max-width:300px;margin:6px 0 0}
+#g{display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;overflow:auto;padding:calc(6px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px));gap:8px;--s:21px}
+#g.on{display:flex}
+#side{display:contents}
+.top{order:1;display:flex;align-items:center;justify-content:space-between;width:min(100%,420px)}
+.top .ttl{font-size:9px;text-shadow:2px 2px 0 var(--accent)}
+.top button{margin:4px 8px;padding:8px 10px;font-size:8px}
+.hud{order:2;display:flex;gap:12px;width:min(100%,420px);padding:0 4px}
+.pl{--e:var(--edge);flex:1;min-width:0;padding:6px;font-size:7px;line-height:1.6;text-align:left;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -3px 0 0 var(--e),0 3px 0 0 var(--e),-3px 0 0 0 var(--e),3px 0 0 0 var(--e)}
+.pl.act{--e:var(--accent)}
+.pl.act .nm::before{content:'> ';color:var(--accent)}
+.pl b{font-size:12px;font-weight:400}
+.pl.bag{flex:.7}
+#bw{order:3;padding:6px;line-height:0;flex:none}
+#bd{display:grid;grid-template-columns:repeat(15,var(--s));gap:1px;background:var(--edge)}
+.c{width:var(--s);height:var(--s);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:calc(var(--s)*.34);line-height:1;color:#fff;cursor:pointer;position:relative}
+.c.tw{background:#d8503f}.c.dw{background:#e48f84;color:#3a1410}.c.tl{background:#2f6fae}.c.dl{background:#8fbfe2;color:#10243a}
+.c.star{color:var(--accent);font-size:calc(var(--s)*.55)}
+.t{width:100%;height:100%;background:#f2dc9a;color:#2a1d14;display:flex;align-items:center;justify-content:center;font-size:calc(var(--s)*.5);line-height:1;box-shadow:inset -2px -2px 0 rgba(0,0,0,.3),inset 2px 2px 0 rgba(255,255,255,.45);position:relative}
+.t i{position:absolute;right:calc(var(--s)*.07);bottom:calc(var(--s)*.05);font-style:normal;font-size:calc(var(--s)*.26)}
+.t.bl{color:#a8431f}
+.t.p{outline:3px solid var(--accent);outline-offset:-3px}
+#msg{order:4;font-size:8px;line-height:1.9;min-height:3.8em;max-width:min(100%,420px);display:flex;align-items:center;justify-content:center;text-transform:uppercase}
+#msg.er{color:var(--accent)}
+#rk{order:5;display:flex;gap:6px;min-height:44px;align-items:flex-end}
+.rt{width:44px;height:44px;min-height:44px;padding:0;margin:0;font-size:18px;box-shadow:none;background:none;transition:transform .1s}
+.rt .t{font-size:20px}.rt .t i{font-size:9px;right:4px;bottom:3px}
+.rt.sel{transform:translateY(-8px)}.rt.sel .t{outline:3px solid var(--accent);outline-offset:-3px}
+@media (hover:hover){.rt:hover{background:none}}
+.rt:active{transform:translateY(-4px);background:none}
+#bt{order:6;display:flex;flex-wrap:wrap;gap:0 2px;justify-content:center;max-width:min(100%,420px)}
+#bt button{margin:6px 5px}
+#bPlay{background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #bPlay{color:#1b1230}}
+:root[data-theme="dark"] #bPlay{color:#1b1230}
+#pk{display:grid;grid-template-columns:repeat(6,48px);gap:8px 4px;justify-content:center}
+#pk button{margin:0;width:44px;padding:0;font-size:12px}
+@media (orientation:landscape) and (max-height:520px){
+ #g{flex-direction:row;gap:14px}
+ #side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:min(46vw,330px)}
+ .top,.hud,#msg,#bt{width:100%}
+ #bt button{margin:4px 3px}
+ #rk{gap:3px;justify-content:center;width:100%}
+}
+</style>
+</head>
+<body>
+<section id="s-title" class="scr on" aria-label="Main menu">
+ <h1 class="logo">PIXEL<br><span>SCRABBLE</span></h1>
+ <p class="sub">WORD TILES FOR TWO PLAYERS</p>
+ <button class="big" id="bStart" type="button">2 PLAYERS</button>
+ <div>
+  <button class="sm" id="bHow" type="button">HOW TO PLAY</button>
+  <button class="sm tsnd" type="button">SOUND: ON</button>
+ </div>
+ <div>
+  <label class="lnk px">WORD LIST<input type="file" id="wl" accept=".txt,text/plain" hidden></label>
+  <a class="lnk px" href="../index.html">ARCADE</a>
+ </div>
+ <p id="dc"></p>
+</section>
+<section id="s-how" class="scr" aria-label="How to play">
+ <div class="card px">
+  <h2>HOW TO PLAY</h2>
+  <p>TAP A RACK TILE, THEN TAP A SQUARE. TAP A PLACED TILE TO TAKE IT BACK.</p>
+  <p>PLAY IN ONE ROW OR COLUMN. THE FIRST WORD COVERS THE STAR. LATER WORDS MUST TOUCH TILES ALREADY ON THE BOARD.</p>
+  <p>COLOURED SQUARES BOOST ONLY THE TILES YOU PLACE. USING ALL 7 TILES SCORES 50 EXTRA.</p>
+  <p>PASS THE PHONE AFTER EACH TURN. LOAD A WORD LIST FROM THE MENU TO CHECK WORDS.</p>
+  <button class="big" id="bHowOk" type="button">GOT IT</button>
+ </div>
+</section>
+<main id="g" aria-label="Game board">
+ <div id="side">
+  <div class="top"><button type="button" id="bMenu">MENU</button><span class="ttl">SCRABBLE</span><button type="button" class="tsnd">SOUND: ON</button></div>
+  <div class="hud"><div class="pl px" id="pl0"><span class="nm">P1</span><b>0</b></div><div class="pl px" id="pl1"><span class="nm">P2</span><b>0</b></div><div class="pl px bag"><span>BAG</span><b id="bagn">86</b></div></div>
+  <div id="msg" role="status" aria-live="polite"></div>
+  <div id="rk" aria-label="Your rack"></div>
+  <div id="bt"><button class="sm" id="bPlay" type="button">PLAY</button><button class="sm" id="bRecall" type="button">RECALL</button><button class="sm" id="bShuf" type="button">SHUFFLE</button><button class="sm" id="bSwap" type="button">SWAP</button><button class="sm" id="bPass" type="button">PASS</button></div>
+ </div>
+ <div id="bw" class="px"><div id="bd" role="grid" aria-label="Board"></div></div>
+</main>
+<section id="s-hand" class="scr" aria-label="Pass the phone">
+ <div class="card px"><h2 id="ht">PLAYER 2</h2><p id="hs" style="text-align:center">PASS THE PHONE, THEN TAP.</p><button class="big" id="bReveal" type="button">SHOW MY RACK</button></div>
+</section>
+<section id="s-pick" class="scr dim" aria-label="Choose a letter for the blank">
+ <div class="card px"><h2>BLANK TILE</h2><p style="text-align:center">PICK ITS LETTER</p><div id="pk"></div><button class="sm" id="bPickX" type="button">CANCEL</button></div>
+</section>
+<section id="s-over" class="scr dim" aria-label="Game over">
+ <div class="card px">
+  <h2 id="ot">GAME OVER</h2>
+  <p id="os" style="text-align:center"></p>
+  <button class="big" id="bAgain" type="button">PLAY AGAIN</button>
+  <button class="big" id="bMenu2" type="button">MENU</button>
+  <a class="big px lnk" href="../index.html" style="display:block;text-align:center;padding:16px 8px">ARCADE</a>
+ </div>
+</section>
+<script src="../shared/shared.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),Q=s=>document.querySelectorAll(s);
+const V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+const pair=a=>{const m={};for(let i=0;i<a.length;i+=2)m[a[i]*15+a[i+1]]=1;return m};
+const TW=pair([0,0,0,7,0,14,7,0,7,14,14,0,14,7,14,14]);
+const DW=pair([1,1,2,2,3,3,4,4,1,13,2,12,3,11,4,10,10,4,11,3,12,2,13,1,10,10,11,11,12,12,13,13,7,7]);
+const TL=pair([1,5,1,9,5,1,5,5,5,9,5,13,9,1,9,5,9,9,9,13,13,5,13,9]);
+const DL=pair([0,3,0,11,2,6,2,8,3,0,3,7,3,14,6,2,6,6,6,8,6,12,7,3,7,11,8,2,8,6,8,8,8,12,11,0,11,7,11,14,12,6,12,8,14,3,14,11]);
+const tv=t=>t.b?0:V[t.l];
+let B,P,bag,cur,sel,passes,over,hid,dict=null,wait=null,last='';
+const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const draw=p=>{while(p.r.length<7&&bag.length)p.r.push(bag.pop())};
+
+/* ---- sound: short chiptune blips, only when the arcade sound toggle is on ---- */
+function sfx(kind){
+  if(!window.Shared||!Shared.sound.get())return;
+  try{
+    window._ac=window._ac||new(window.AudioContext||window.webkitAudioContext)();const ac=_ac;if(ac.state==='suspended')ac.resume();
+    const seq={tick:[[740,.04]],err:[[130,.14]],ok:[[520,.07],[780,.1]],win:[[520,.1],[660,.1],[880,.2]]}[kind];let t=ac.currentTime;
+    for(const[f,d]of seq){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.01);t+=d}
+  }catch(e){}
+}
+
+/* ---- game state ---- */
+function newGame(){
+  B=Array.from({length:15},()=>Array(15).fill(null));bag=[];
+  for(const[,l,n]of'A9B2C2D4E12F2G3H2I9J1K1L4M2N6O8P2Q1R6S4T6U4V2W2X1Y2Z1'.matchAll(/([A-Z])(\d+)/g))for(let i=0;i<+n;i++)bag.push({l,b:0});
+  bag.push({l:'?',b:1},{l:'?',b:1});shuf(bag);
+  P=[0,1].map(()=>({s:0,r:[]}));P.forEach(draw);
+  cur=0;sel=null;passes=0;over=0;hid=1;wait=null;last='PLAYER 1 STARTS. COVER THE STAR.';msg('');
+  show('s-hand');render();
+}
+/* full screens (menu, help) replace the board; overlays (hand-off, blank picker, result) sit on top of it */
+function show(id){
+  const full=id==='s-title'||id==='s-how';
+  ['s-title','s-how','s-hand','s-pick','s-over'].forEach(s=>$(s).classList.toggle('on',s===id));
+  $('g').classList.toggle('on',!full);if(!full)fit();
+}
+const close=id=>$(id).classList.remove('on');
+function msg(t,e){$('msg').textContent=t||'';$('msg').className=e?'er':''}
+const tile=(t,pend)=>`<div class="t${t.b?' bl':''}${pend?' p':''}">${t.l}${t.b?'':`<i>${V[t.l]}</i>`}</div>`;
+function render(){
+  P.forEach((p,i)=>{const e=$('pl'+i);e.classList.toggle('act',i===cur&&!over);e.querySelector('.nm').textContent='P'+(i+1);e.querySelector('b').textContent=p.s});
+  $('bagn').textContent=bag.length;
+  const lab={tw:'3W',dw:'2W',tl:'3L',dl:'2L'};
+  $('bd').innerHTML=B.map((row,r)=>row.map((t,c)=>{const k=r*15+c,pm=TW[k]?'tw':DW[k]?'dw':TL[k]?'tl':DL[k]?'dl':'';
+    return `<div class="c ${t?'':pm}${!t&&k===112?' star':''}" data-r="${r}" data-c="${c}" role="gridcell">${t?tile(t,!t.f):k===112?'\u2605':lab[pm]||''}</div>`}).join('')).join('');
+  $('rk').innerHTML=hid||over?'':P[cur].r.map((t,i)=>`<button type="button" class="rt${i===sel?' sel':''}" data-i="${i}" aria-label="Tile ${t.b?'blank':t.l}">${tile(t)}</button>`).join('');
+  if(!msgKeep)$('msg').textContent=last;
+  $('bt').querySelectorAll('button').forEach(b=>b.disabled=!!(hid||over));
+}
+let msgKeep=false;
+function say(t,e){msgKeep=true;msg(t,e)}
+function clearSay(){msgKeep=false}
+
+/* ---- input ---- */
+$('rk').onclick=e=>{const d=e.target.closest('[data-i]');if(!d||hid||over)return;const i=+d.dataset.i;sel=sel===i?null:i;sfx('tick');render()};
+$('bd').onclick=e=>{const d=e.target.closest('[data-r]');if(!d||hid||over)return;
+  const r=+d.dataset.r,c=+d.dataset.c,t=B[r][c];clearSay();
+  if(t){if(!t.f){B[r][c]=null;P[cur].r.push({l:t.b?'?':t.l,b:t.b});sel=null;sfx('tick');render()}return}
+  if(sel==null)return say('Pick a tile from your rack first.',1);
+  if(P[cur].r[sel].b){wait={r,c};show('s-pick');return}
+  put(r,c,sel)};
+function put(r,c,i,l){const t=P[cur].r.splice(i,1)[0];if(l)t.l=l;B[r][c]={l:t.l,b:t.b,f:0};sel=null;sfx('tick');render()}
+{const g=$('pk');for(const l of Object.keys(V)){const b=document.createElement('button');b.type='button';b.textContent=l;
+  b.onclick=()=>{close('s-pick');if(wait)put(wait.r,wait.c,sel,l);wait=null};g.appendChild(b)}}
+$('bPickX').onclick=()=>{wait=null;close('s-pick')};
+
+/* ---- rules and scoring ---- */
+function wordAt(r,c,dr,dc){while(r>=dr&&c>=dc&&B[r-dr][c-dc]){r-=dr;c-=dc}const w=[];while(r<15&&c<15&&B[r][c]){w.push([r,c]);r+=dr;c+=dc}return w}
+function check(){
+  const pend=[];B.forEach((row,r)=>row.forEach((t,c)=>{if(t&&!t.f)pend.push([r,c])}));
+  if(!pend.length)return{e:'Place at least one tile first.'};
+  const sr=pend.every(p=>p[0]==pend[0][0]),sc=pend.every(p=>p[1]==pend[0][1]);
+  if(!sr&&!sc)return{e:'Tiles must all be in one row or one column.'};
+  if(pend.length>1){const d=sr?[0,1]:[1,0],w=wordAt(pend[0][0],pend[0][1],d[0],d[1]);
+    if(!pend.every(p=>w.some(x=>x[0]==p[0]&&x[1]==p[1])))return{e:'Tiles must be next to each other with no gaps.'}}
+  const first=!B.some(row=>row.some(t=>t&&t.f));
+  if(first&&!pend.some(p=>p[0]==7&&p[1]==7))return{e:'The first word must cover the centre star.'};
+  const seen={},words=[];
+  for(const[r,c]of pend)for(const[dr,dc]of[[0,1],[1,0]]){const w=wordAt(r,c,dr,dc);if(w.length<2)continue;const k=w[0]+'|'+dr;if(seen[k])continue;seen[k]=1;words.push(w)}
+  if(!words.length)return{e:'Tiles must form a word of two or more letters.'};
+  if(!first&&!words.some(w=>w.some(([r,c])=>B[r][c].f)))return{e:'Your word must connect to tiles already on the board.'};
+  const strs=words.map(w=>w.map(([r,c])=>B[r][c].l).join(''));
+  if(dict){const bad=strs.filter(s=>!dict.has(s));if(bad.length)return{e:'Not in the word list: '+bad.join(', ')+'.'}}
+  let tot=0;
+  for(const w of words){let s=0,m=1;for(const[r,c]of w){const t=B[r][c],k=r*15+c;let v=tv(t);
+    if(!t.f){if(DL[k])v*=2;if(TL[k])v*=3;if(DW[k])m*=2;if(TW[k])m*=3}s+=v}tot+=s*m}
+  const bingo=pend.length==7;if(bingo)tot+=50;
+  return{pend,tot,strs,bingo}}
+function next(){cur=1-cur;sel=null;hid=1;clearSay();$('ht').textContent='PLAYER '+(cur+1);show('s-hand');render()}
+function recall(){B.forEach((row,r)=>row.forEach((t,c)=>{if(t&&!t.f){P[cur].r.push({l:t.b?'?':t.l,b:t.b});B[r][c]=null}}));sel=null}
+function finish(out){
+  over=1;P.forEach((p,i)=>{const s=p.r.reduce((a,t)=>a+tv(t),0);p.s-=s;if(out>=0&&i!=out)P[out].s+=s});
+  try{if(window.Shared){Shared.recordGame('scrabble',out>=0);Shared.addXP('scrabble',out>=0?Shared.XP.win:Shared.XP.loss)}}catch(e){}
+  const[a,b]=P.map(p=>p.s);
+  $('ot').textContent=a==b?'A DRAW':`PLAYER ${a>b?1:2} WINS`;
+  $('os').textContent=a==b?`${a} POINTS EACH`:`${Math.max(a,b)} TO ${Math.min(a,b)}`;
+  last='Game over. Unplayed tiles are subtracted from each score.';clearSay();render();sfx('win');show('s-over')}
+$('bPlay').onclick=()=>{if(hid||over)return;const x=check();if(x.e){sfx('err');return say(x.e,1)}
+  const p=P[cur];x.pend.forEach(([r,c])=>B[r][c].f=1);p.s+=x.tot;draw(p);passes=0;clearSay();sfx('ok');
+  last=`PLAYER ${cur+1} PLAYED ${x.strs.join(', ')} FOR ${x.tot}${x.bingo?', PLUS 50 FOR USING ALL 7 TILES':''}.`;
+  if(!p.r.length&&!bag.length)return finish(cur);next()};
+$('bRecall').onclick=()=>{if(hid||over)return;recall();clearSay();render()};
+$('bShuf').onclick=()=>{if(hid||over)return;shuf(P[cur].r);sel=null;sfx('tick');render()};
+$('bPass').onclick=()=>{if(hid||over)return;recall();passes++;last=`PLAYER ${cur+1} PASSED.`;if(passes>=6)return finish(-1);next()};
+$('bSwap').onclick=()=>{if(hid||over)return;if(bag.length<7){sfx('err');return say('Swapping needs at least 7 tiles left in the bag.',1)}
+  recall();const p=P[cur];bag.push(...p.r);p.r=[];shuf(bag);draw(p);passes++;last=`PLAYER ${cur+1} SWAPPED THEIR TILES.`;
+  if(passes>=6)return finish(-1);next()};
+$('bReveal').onclick=()=>{hid=0;close('s-hand');render();fit()};
+
+/* ---- menus, word list, layout ---- */
+$('bStart').onclick=newGame;$('bAgain').onclick=newGame;
+$('bHow').onclick=()=>show('s-how');$('bHowOk').onclick=()=>show('s-title');
+const toMenu=()=>show('s-title');$('bMenu').onclick=toMenu;$('bMenu2').onclick=toMenu;
+function dcText(){$('dc').textContent=dict?`WORD LIST LOADED: ${dict.size.toLocaleString()} WORDS. EVERY WORD IS CHECKED.`:'NO WORD LIST: WORDS ARE ON THE HONOUR SYSTEM.'}
+$('wl').onchange=async e=>{const f=e.target.files[0];if(!f)return;const t=await f.text();dict=new Set(t.toUpperCase().split(/[\s,]+/).filter(w=>w.length>1));dcText()};
+const snd=()=>{const on=window.Shared?Shared.sound.get():true;Q('.tsnd').forEach(b=>b.textContent='SOUND: '+(on?'ON':'OFF'))};
+Q('.tsnd').forEach(b=>b.addEventListener('click',()=>{Shared.sound.toggle();snd()}));
+function fit(){
+  const g=$('g');if(!g.classList.contains('on'))return;
+  const land=matchMedia('(orientation:landscape) and (max-height:520px)').matches;let aw,ah;
+  if(land){aw=g.clientWidth-Math.min(innerWidth*.46,330)-60;ah=g.clientHeight-60}
+  else{let used=0;for(const q of['.top','.hud','#msg','#rk','#bt'])used+=(g.querySelector(q).offsetHeight||0)+8;aw=g.clientWidth-44;ah=g.clientHeight-used-8-36}
+  const s=Math.max(15,Math.min(40,Math.floor(Math.min((aw-14)/15,(ah-14)/15))));
+  g.style.setProperty('--s',s+'px');
+}
+addEventListener('resize',fit);if(window.visualViewport)visualViewport.addEventListener('resize',fit);
+snd();dcText();
+fetch('words.txt').then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{dict=new Set(t.toUpperCase().split(/[\s,]+/).filter(w=>w.length>1));dcText()}).catch(()=>{});
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
