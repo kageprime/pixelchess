@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
     const codes = await Promise.all(urls.map(async u => [u, (await ctx.request.get(u)).status()]));
     ok('all links, styles and scripts on the hub resolve (' + urls.length + ')', codes.every(c => c[1] === 200), codes.filter(c => c[1] !== 200));
     const pool = await ctx.request.get(base + 'pool/index.html');
-    ok('pool is served at /pool/index.html', pool.status() === 200 && (await pool.text()).includes('Pixel Pool 3D'));
+    ok('pool is served at /pool/index.html', pool.status() === 200 && (await pool.text()).includes('Pixie Pool'));
     const scr = await ctx.request.get(base + 'scrabble/index.html');
     ok('scrabble is served at /scrabble/index.html', scr.status() === 200 && (await scr.text()).includes('Pixel Scrabble'));
     const chess = await ctx.request.get(base + 'chess/index.html');
@@ -178,7 +178,7 @@ const server = http.createServer((req, res) => {
     await pg.goto(base + 'chess/index.html');
     ok('chess loads offline', (await pg.$('#cv')) !== null);
     await pg.goto(base + 'pool/index.html');
-    ok('pool loads offline and starts a game', (await pg.$('#bCpu')) !== null && await pg.evaluate(() => { startGame('2p'); return bl.length === 16 && state === 'aim'; }));
+    ok('pool loads offline and starts a game', (await pg.$('#btn-cpu')) !== null && await pg.evaluate(() => { startGame('hot'); return balls.length === 16 && (phase === 'place' || phase === 'aim'); }));
     await pg.goto(base + 'scrabble/index.html');
     ok('scrabble loads offline with a board', (await pg.$('#bd')) !== null);
     await pg.goto(base + 'scrabble/index.html');

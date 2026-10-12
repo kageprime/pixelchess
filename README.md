@@ -31,9 +31,9 @@ Chess used to live at the site root. `/` is now the hub and chess is at `/chess`
 
 Ladder vs Mossback, Lady Vex, Old Dune and secret Nox; daily mate-in-1 puzzles with streaks; blitz clocks; post-game review with evals and blunder marks; tutor mode with verdicts and refutation previews; themes; local + world leaderboards; share cards; YouTube world music; P2P online matches. Carries the arcade profile fields (`xp`, `byGame`, `name`) through its own saves.
 
-## Pool
+## Pool (Pixie Pool)
 
-8-ball on a perspective table drawn at 160x224 and scaled up (own 2D physics, no library, so there is nothing to vendor). Vs CPU (3 levels) or 2 players on one device. Wins against the CPU award hub XP through `Shared.addXP('pool', Shared.XP.win)` and are counted with `Shared.recordGame('pool', won)`; 2-player games award nothing. The XP amounts in `Shared.XP` are placeholders. Not modelled: cue-ball spin, jump or masse shots.
+WebGL2 3D 8-ball with real ball physics: spin (follow/draw/side via the tip pad), fouls (scratch, wrong ball, no rail), ball in hand, break and 8-ball rules. Vs CPU (with thinking, aiming and skill levels) or 2 players on one device, plus free play. CPU wins award hub XP through `Shared.addXP('pool', Shared.XP.win)` and are counted with `Shared.recordGame('pool', won)`; 2-player games award nothing. The XP amounts in `Shared.XP` are placeholders. Not modelled: jump or masse shots.
 
 ## Scrabble (Pixel Words)
 
