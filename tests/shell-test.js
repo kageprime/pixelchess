@@ -187,6 +187,52 @@ const server = http.createServer((req, res) => {
     await p6.close();
   }
 
+  // ---- start screens: one primary PLAY per game ----
+  {
+    const p7 = await ctx.newPage();
+    await p7.goto(base + 'pool/index.html');
+    await p7.waitForTimeout(600);
+    ok('pool menu leads with PLAY', await p7.evaluate(() => !!document.getElementById('bPlay')));
+    await p7.click('#bPlay');
+    await p7.waitForTimeout(400);
+    ok('pool PLAY starts a game', await p7.evaluate(() => (window.__pool.state === 'place' || window.__pool.state === 'aim') && !document.getElementById('hud').hidden));
+    await p7.close();
+
+    const p8 = await ctx.newPage();
+    await p8.goto(base + 'scrabble/index.html');
+    await p8.click('#bStart');
+    ok('scrabble PLAY opens the pass-the-phone screen', await p8.evaluate(() => document.getElementById('s-hand').classList.contains('on')));
+    await p8.close();
+
+    const p9 = await ctx.newPage();
+    await p9.goto(base + 'connect4/index.html');
+    await p9.click('[data-mode="2p"]');
+    await p9.click('#cols button[data-k="3"]');
+    await p9.waitForTimeout(200);
+    await p9.click('#again');
+    ok('connect4 PLAY restarts the board', (await p9.evaluate(() => document.querySelectorAll('#grid .disc').length)) === 0);
+    await p9.close();
+
+    const p10 = await ctx.newPage();
+    await p10.goto(base + 'ayo/index.html');
+    await p10.waitForTimeout(800);
+    await p10.click('#md [data-v="2p"]');
+    await p10.keyboard.press('1');
+    await p10.waitForTimeout(2500);
+    await p10.click('#again');
+    await p10.waitForTimeout(300);
+    ok('ayo PLAY restarts the pits', /BOTTOM'S TURN/.test(await p10.textContent('#status')) && (await p10.textContent('#log')) === '');
+    await p10.close();
+
+    const p11 = await ctx.newPage();
+    await p11.goto(base + 'ludo/index.html');
+    await p11.waitForTimeout(800);
+    await p11.click('#again');
+    await p11.waitForTimeout(500);
+    ok('ludo PLAY opens at a fresh roll', /ROLL THE DIE/.test(await p11.textContent('#msg')));
+    await p11.close();
+  }
+
   const real = errs.filter(e => !/fonts\.googleapis|fonts\.gstatic|ERR_|Failed to load|404/.test(e));
   ok('no console or page errors', real.length === 0 && pageErrs.length === 0, { real, pageErrs });
   await ctx.close(); await browser.close(); server.close();

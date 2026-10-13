@@ -72,7 +72,7 @@ label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
 <section id="s-title" class="scr on" aria-label="Main menu">
  <h1 class="logo">PIXEL<br><span>SCRABBLE</span></h1>
  <p class="sub">WORD TILES FOR TWO PLAYERS</p>
- <button class="big" id="bStart" type="button">2 PLAYERS</button>
+ <button class="big" id="bStart" type="button">▶ PLAY</button>
  <button class="big" id="bContinue" type="button" hidden>CONTINUE SAVED GAME</button>
  <div>
   <button class="sm" id="bHow" type="button">HOW TO PLAY</button>
@@ -121,6 +121,8 @@ label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
 </section>
 <script src="../shared/shared.js"></script>
 <script src="../shared/shell.js"></script>
+<script src="../shared/trophies-data.js"></script>
+<script src="../shared/trophies.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),Q=s=>document.querySelectorAll(s);
@@ -220,12 +222,14 @@ function finish(out){
   over=1;try{ArcadeShell.clear('scrabble')}catch(e){}
   P.forEach((p,i)=>{const s=p.r.reduce((a,t)=>a+tv(t),0);p.s-=s;if(out>=0&&i!=out)P[out].s+=s});
   try{if(window.Shared){Shared.recordGame('scrabble',out>=0);Shared.addXP('scrabble',out>=0?Shared.XP.win:Shared.XP.loss)}}catch(e){}
+  if(window.ArcadeTrophies){try{ArcadeTrophies.emit('gameover',{completed:true,myScore:P[0].s},{game:'scrabble'});}catch(e){}}
   const[a,b]=P.map(p=>p.s);
   $('ot').textContent=a==b?'A DRAW':`PLAYER ${a>b?1:2} WINS`;
   $('os').textContent=a==b?`${a} POINTS EACH`:`${Math.max(a,b)} TO ${Math.min(a,b)}`;
   last='Game over. Unplayed tiles are subtracted from each score.';clearSay();render();sfx('win');show('s-over')}
 $('bPlay').onclick=()=>{if(hid||over)return;const x=check();if(x.e){sfx('err');return say(x.e,1)}
   const p=P[cur];x.pend.forEach(([r,c])=>B[r][c].f=1);p.s+=x.tot;draw(p);passes=0;clearSay();sfx('ok');
+  if(x.bingo&&cur===0&&window.ArcadeTrophies){try{ArcadeTrophies.emit('play',{by:'me',bingo:true},{game:'scrabble'});}catch(e){}}
   last=`PLAYER ${cur+1} PLAYED ${x.strs.join(', ')} FOR ${x.tot}${x.bingo?', PLUS 50 FOR USING ALL 7 TILES':''}.`;
   if(!p.r.length&&!bag.length)return finish(cur);next()};
 $('bRecall').onclick=()=>{if(hid||over)return;recall();clearSay();render()};

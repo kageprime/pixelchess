@@ -31,7 +31,7 @@ body {
 }
 [hidden] { display: none !important; }
 button { font: inherit; color: inherit; }
-#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; background: var(--bg); }
+#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: auto; background: var(--bg); }
 
 /* ---------- HUD ---------- */
 #hud { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
@@ -180,12 +180,15 @@ button { font: inherit; color: inherit; }
   <div class="box">
     <canvas id="logo" width="96" height="40"></canvas>
     <div class="tag">PIXEL UNIVERSE</div>
+    <button class="btn primary" id="bPlay">▶ PLAY<span id="bPlaySub">VS CPU · PRO</span></button>
     <div class="btns">
-      <button class="btn primary" data-mode="cpu">VS CPU <span>8-BALL<br>YOU BREAK</span></button>
+      <button class="btn" data-mode="cpu">VS CPU <span>8-BALL<br>YOU BREAK</span></button>
       <button class="btn" data-mode="2p">2 PLAYERS <span>PASS &amp; PLAY</span></button>
       <button class="btn" data-mode="practice">PRACTICE <span>NO RULES</span></button>
-      <button class="btn" id="bResume" hidden>RESUME <span>BACK TO GAME</span></button>
+    </div>
+    <div class="btns">
       <button class="btn primary" id="bContinue" hidden>CONTINUE <span>SAVED GAME</span></button>
+      <button class="btn" id="bResume" hidden>RESUME <span>BACK TO GAME</span></button>
     </div>
     <div class="chips" role="group" aria-label="CPU skill">
       <span class="lab">CPU SKILL</span>

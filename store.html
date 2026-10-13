@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Arcade: Game Store Page</title>
+<meta name="description" content="Preview game features, gameplay screenshots, controls, and launch games directly from the Pixel Arcade Store.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="shared/arcade.css">
+<script src="shared/vendor/tailwind.min.js"></script>
+<style>
+@font-face{font-family:'Press Start 2P';font-style:normal;font-weight:400;font-display:swap;src:url('shared/vendor/PressStart2P-Regular.woff2') format('woff2')}
+.font-pixel{font-family:'Press Start 2P',ui-monospace,monospace}
+.ic{width:2.5rem;height:2.5rem;shape-rendering:crispEdges}
+.thumb-active{outline:3px solid #fbbf24;outline-offset:2px}
+.steam-gradient{background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%)}
+.steam-accent-btn{background:linear-gradient(90deg,#16a34a 0%,#22c55e 100%);box-shadow:0 3px 0 #15803d}
+.steam-accent-btn:hover{background:linear-gradient(90deg,#22c55e 0%,#4ade80 100%)}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-pixel antialiased p-4 min-h-screen flex flex-col items-center justify-start select-none">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-chess" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M6 2h4v4h-4zM7 6h2v1h-2zM5 7h6v1h-6zM6 8h4v3h-4zM4 11h8v2h-8zM3 13h10v2h-10z"/><path fill="#0b0616" d="M7 3h1v2h-1z"/><path fill="#ffd23f" d="M3 14h10v1h-10z"/></symbol>
+<symbol id="i-pool" viewBox="0 0 16 16"><path fill="#ffd23f" d="M6 2h4v1h-4zM4 3h8v1h-8zM3 4h10v1h-10zM2 5h12v6h-12zM3 11h10v1h-10zM4 12h8v1h-8zM6 13h4v1h-4z"/><path fill="#f5e9c8" d="M6 6h4v4h-4z"/><path fill="#0b0616" d="M7 7h2v2h-2z"/></symbol>
+<symbol id="i-ayo" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M1 3h14v10h-14z"/><path fill="#0b0616" d="M2 4h3v3h-3zM6 4h3v3h-3zM10 4h3v3h-3zM2 9h3v3h-3zM6 9h3v3h-3zM10 9h3v3h-3z"/><path fill="#ffd23f" d="M3 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM3 10h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1z"/></symbol>
+<symbol id="i-scrabble" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M2 2h12v12h-12z"/><path fill="#0b0616" d="M6 4h4v1h-4zM5 5h2v6h-2zM9 5h2v6h-2zM6 8h4v1h-4z"/><path fill="#ffd23f" d="M4 12h8v1h-8z"/></symbol>
+<symbol id="i-connect4" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M2 2h12v12h-12z"/><path fill="#0b0616" d="M4 4h2v2h-2zM7 4h2v2h-2zM10 4h2v2h-2zM4 7h2v2h-2zM7 7h2v2h-2zM10 7h2v2h-2zM4 10h2v2h-2zM7 10h2v2h-2zM10 10h2v2h-2z"/><path fill="#ffd23f" d="M4 10h2v2h-2zM10 4h2v2h-2z"/></symbol>
+<symbol id="i-ludo" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M3 3h10v10h-10z"/><path fill="#0b0616" d="M5 5h2v2h-2zM9 5h2v2h-2zM5 9h2v2h-2zM9 9h2v2h-2z"/><path fill="#ffd23f" d="M5 5h2v2h-2zM9 9h2v2h-2z"/></symbol>
+<symbol id="i-draughts" viewBox="0 0 16 16"><path fill="#ffd23f" d="M9 1h4v1h-4zM8 2h6v1h-6zM7 3h8v4h-8zM8 7h6v1h-6zM9 8h4v1h-4z"/><path fill="#0b0616" d="M10 4h2v2h-2z"/><path fill="#f5e9c8" d="M3 7h4v1h-4zM2 8h6v1h-6zM1 9h8v4h-8zM2 13h6v1h-6zM3 14h4v1h-4z"/><path fill="#0b0616" d="M4 10h2v2h-2z"/></symbol>
+<symbol id="i-shogi" viewBox="0 0 16 16"><path fill="#f5e9c8" d="M7 1h2v1h-2zM6 2h4v1h-4zM5 3h6v1h-6zM4 4h8v1h-8zM3 5h10v10h-10z"/><path fill="#ffd23f" d="M7 7h2v6h-2zM5 9h6v1h-6z"/></symbol>
+</svg>
+
+<!-- TOP APP BAR -->
+<header class="w-full max-w-5xl bg-slate-800/90 backdrop-blur border-2 border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4 mb-6 shadow-lg">
+  <div class="flex items-center gap-3">
+    <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <div id="ci" title="Back to Store" class="w-8 h-8 bg-amber-400 text-slate-950 flex items-center justify-center font-black rounded shadow text-[9px] leading-none">PA</div>
+      <div>
+        <div class="text-xs text-amber-400 font-bold">PIXEL ARCADE</div>
+        <div class="text-[7px] text-slate-400">◄ STORE HOME</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="flex items-center gap-2 text-[8px]">
+    <a href="index.html" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-slate-200">← CATALOG</a>
+    <a href="trophies.html" class="bg-slate-800 hover:bg-slate-700 border border-amber-400/50 text-amber-300 px-3 py-2 rounded flex items-center gap-1.5" title="Trophy Room">
+      <span>🏆</span>
+      <span>TROPHIES</span>
+    </a>
+    <button id="snd" type="button" aria-pressed="true" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-slate-200">SOUND: ON</button>
+  </div>
+</header>
+
+<!-- MAIN GAME STORE CONTAINER -->
+<main class="w-full max-w-5xl space-y-8" id="store-app">
+  
+  <!-- BREADCRUMBS -->
+  <div class="text-[8px] text-slate-400 flex items-center gap-2">
+    <a href="index.html" class="hover:text-amber-400">ALL GAMES</a>
+    <span>&gt;</span>
+    <span id="g-genre" class="text-amber-400">BOARD &amp; STRATEGY</span>
+    <span>&gt;</span>
+    <span id="g-crumb" class="text-white">PIXEL CHESS</span>
+  </div>
+
+  <!-- TITLE & TAGS BAR -->
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 id="g-title" class="text-2xl text-amber-300 font-bold tracking-wider">PIXEL CHESS</h1>
+        <span id="g-badge" class="bg-emerald-900/80 text-emerald-300 border border-emerald-600 text-[8px] px-2 py-0.5 rounded">FLAGSHIP TITLE</span>
+      </div>
+      <p id="g-tagline" class="text-[9px] text-slate-400 mt-1">THE ACCLAIMED RETRO ENGINE WITH 3-TIER BOT LADDER &amp; ONLINE PLAY</p>
+    </div>
+    <div id="g-tags" class="flex flex-wrap gap-2 text-[7px]">
+      <!-- Tags injected dynamically -->
+    </div>
+  </div>
+
+  <!-- MEDIA SHOWCASE & RIGHT DETAILS PANEL -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT: SCREENSHOT GALLERY & VIEWER -->
+    <div class="lg:col-span-8 space-y-3">
+      <!-- MAIN PREVIEW SCREEN -->
+      <div class="relative aspect-video bg-black/80 rounded-xl overflow-hidden border-2 border-slate-700 shadow-2xl flex items-center justify-center group">
+        <img id="main-preview-img" src="landscape.png" alt="Gameplay preview" class="w-full h-full object-contain select-none">
+        <div id="preview-caption" class="absolute bottom-0 inset-x-0 bg-slate-950/80 text-[8px] text-slate-300 px-4 py-2 border-t border-slate-800 flex items-center justify-between">
+          <span id="caption-text">MATCH VIEW: FULL SCREEN CLASSIC PIXEL INTERFACE</span>
+          <span class="text-amber-400 text-[7px]">HD CLEAN PRESENTATION</span>
+        </div>
+      </div>
+
+      <!-- THUMBNAIL STRIP -->
+      <div id="thumb-strip" class="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Screenshots">
+        <!-- Thumbnails injected dynamically -->
+      </div>
+    </div>
+
+    <!-- RIGHT: STORE SYNOPSIS & SPECS -->
+    <div class="lg:col-span-4 bg-slate-800/80 border border-slate-700 rounded-xl p-5 flex flex-col justify-between space-y-4">
+      <div class="space-y-4">
+        <div class="flex items-center gap-3 border-b border-slate-700/60 pb-3">
+          <div class="bg-black/50 p-3 rounded-lg border border-slate-700">
+            <svg id="g-icon" class="ic" viewBox="0 0 16 16"><use href="#i-chess"/></svg>
+          </div>
+          <div>
+            <div id="g-side-title" class="text-xs text-white font-bold">PIXEL CHESS</div>
+            <div id="g-status" class="text-[8px] text-emerald-400">PLAYABLE IN BROWSER</div>
+          </div>
+        </div>
+
+        <p id="g-short-desc" class="text-[8px] text-slate-300 leading-relaxed">
+          Play against 3 distinct CPU AI bots with unique personalities, solve daily mate puzzles, unlock custom retro boards &amp; piece themes, and challenge friends locally or over WebRTC p2p.
+        </p>
+
+        <div class="space-y-2 text-[8px] border-t border-slate-700/60 pt-3">
+          <div class="flex justify-between"><span class="text-slate-500">DEVELOPER:</span><span class="text-slate-200">KagePrime</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">PLAYERS:</span><span id="g-players" class="text-slate-200">1-2 Players</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">TECH:</span><span id="g-tech" class="text-slate-200">HTML5 Canvas / Web Audio</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">OFFLINE:</span><span class="text-emerald-400">Yes (PWA Verified)</span></div>
+        </div>
+
+        <!-- PLAYER CAREER STATS WIDGET -->
+        <div class="bg-slate-950/70 border border-slate-800 rounded-lg p-3 space-y-1.5 text-[8px]">
+          <div class="text-amber-400 font-bold text-[7px]">YOUR RECORD (LOCAL)</div>
+          <div class="flex justify-between text-slate-400">
+            <span>STREAK:</span><span id="user-streak" class="text-white font-bold">0</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>BEST STREAK:</span><span id="user-best" class="text-yellow-400 font-bold">0</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>XP EARNED:</span><span id="user-xp" class="text-emerald-400 font-bold">0 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEAM PURCHASE / PLAY BANNER -->
+      <div class="pt-2">
+        <a id="launch-btn" href="chess/index.html" class="steam-accent-btn block w-full text-center text-slate-950 font-black text-xs py-3.5 rounded-lg tracking-wider transition-transform active:translate-y-0.5">
+          ► PLAY NOW (FREE)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUY/PLAY ACTION BANNER (STEAM STYLE) -->
+  <div class="steam-gradient border-2 border-slate-700 rounded-xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+    <div>
+      <h2 id="banner-play-title" class="text-sm text-white font-bold">Play Pixel Chess</h2>
+      <p class="text-[8px] text-slate-400 mt-1">Instant browser play &middot; No install required &middot; Works on mobile &amp; desktop</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="bg-black/60 border border-slate-700 text-[8px] text-amber-300 px-3 py-2 rounded">
+        FREE TO PLAY
+      </span>
+      <a id="banner-launch-btn" href="chess/index.html" class="steam-accent-btn text-slate-950 font-black text-xs px-6 py-3 rounded-lg shadow-md transition-transform active:translate-y-0.5">
+        ► PLAY GAME
+      </a>
+    </div>
+  </div>
+
+  <!-- ABOUT THIS GAME DEEP DIVE -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+    <div class="lg:col-span-8 space-y-6">
+      
+      <section class="space-y-3">
+        <h3 class="text-xs text-amber-400 font-bold tracking-wider border-b border-slate-800 pb-2">ABOUT THIS GAME</h3>
+        <div id="g-long-desc" class="text-[9px] text-slate-300 leading-relaxed space-y-3">
+          <!-- Injected dynamically -->
+        </div>
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-xs text-amber-400 font-bold tracking-wider border-b border-slate-800 pb-2">KEY FEATURES</h3>
+        <ul id="g-features" class="space-y-2 text-[8px] text-slate-300 list-disc list-inside">
+          <!-- Injected dynamically -->
+        </ul>
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-xs text-amber-400 font-bold tracking-wider border-b border-slate-800 pb-2">HOW TO PLAY &amp; CONTROLS</h3>
+        <div id="g-controls" class="bg-slate-950/60 border border-slate-800 rounded-lg p-4 text-[8px] text-slate-300 leading-loose">
+          <!-- Injected dynamically -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT: GAME TROPHIES & RECOMMENDED GAMES -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- GAME TROPHIES PREVIEW -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h3 class="text-xs text-amber-400 font-bold tracking-wider">GAME TROPHIES</h3>
+          <a href="trophies.html" class="text-[7px] text-amber-400 hover:underline">ROOM &rarr;</a>
+        </div>
+        <div id="game-trophies-list" class="space-y-2">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="text-xs text-slate-400 font-bold tracking-wider border-b border-slate-800 pb-2">FEATURED IN ARCADE</h3>
+        <div id="other-games-list" class="space-y-3">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="w-full max-w-5xl flex flex-wrap gap-2 items-center justify-center mt-12 text-[8px] text-slate-500 border-t border-slate-800 pt-6">
+  <span>PIXEL ARCADE STORE</span><span aria-hidden="true">&middot;</span><span>V2.2.0</span><span aria-hidden="true">&middot;</span><a href="index.html" class="text-amber-400 hover:underline">RETURN TO LOBBY</a>
+</footer>
+
+<script src="shared/shared.js"></script>
+<script src="shared/trophies-data.js"></script>
+<script src="shared/trophies.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id),S=window.Shared;
+
+  const CATALOG = {
+    chess: {
+      id: 'chess',
+      title: 'PIXEL CHESS',
+      tagline: 'RETRO CHESS WITH 3-TIER AI LADDER, UNLOCKABLE THEMES & ONLINE MULTIPLAYER',
+      genre: 'BOARD & STRATEGY',
+      badge: 'FLAGSHIP TITLE',
+      icon: '#i-chess',
+      url: 'chess/index.html',
+      players: '1-2 Players (Solo / Hotseat / Online)',
+      tech: 'HTML5 High-Res Canvas / Web Audio Chiptune',
+      tags: ['FLAGSHIP', 'CHESS', 'AI LADDER', 'MULTIPLAYER', 'OFFLINE', 'CHIPTUNE'],
+      shortDesc: 'A rich retro chess experience featuring 3 escalating bot personalities, full move validation, custom themes, finishers, and peer-to-peer online rooms.',
+      longDesc: `
+        <p>Step onto the chequered battlefield with Pixel Chess, the flagship strategy game of Pixel Arcade. Climb the ladder from Mossback to Lady Vex and the ruthless Old Dune.</p>
+        <p>Enjoy reduced pixelation and high-fidelity rendering, beautiful day-to-night dynamic backgrounds, authentic chiptune synthesis, and full SAN move logging.</p>
+        <p>Challenge a friend in local Pass &amp; Play hotseat mode, or generate an instant room code to compete online across devices via WebRTC signal routing.</p>
+      `,
+      features: [
+        '3 CPU bot opponents with distinct tactical temperaments and in-game dialogues.',
+        'Smooth high-res canvas scaling eliminating jagged pixel artifacts.',
+        'Theme shop: Unlock Candy, Midnight, Glacier, and Jade piece palettes as you win.',
+        'Online multiplayer rooms powered by instant peer-to-peer signaling.',
+        'Move undo, hint advisor, blitz clocks, and tutor commentary.',
+        'Complete offline functionality with PWA caching.'
+      ],
+      controls: `
+        <b>MOUSE / TOUCH:</b> Click or drag a piece to see valid destination squares. Tap green dots to move, red squares to capture.<br>
+        <b>KEYBOARD:</b> Arrow keys to navigate menu options, Enter to select, Space / U to undo moves.<br>
+        <b>SHORTCUTS:</b> H for hint, Esc to pause / access tutor and sound options.
+      `,
+      screenshots: [
+        { src: 'landscape.png', caption: 'MATCH VIEW: High-definition retro board with responsive UI' },
+        { src: 'opp-landscape.png', caption: 'LADDER SELECTION: Challenge Mossback, Lady Vex, or Old Dune' },
+        { src: 'themes-pieces.png', caption: 'THEME CUSTOMIZER: Unlockable boards and custom piece palettes' },
+        { src: 'ladder-landscape.png', caption: 'LADDER STREAK: Track your progression and career records' },
+        { src: 'result-landscape.png', caption: 'VICTORY SUMMARY: Earn XP, achievements, and unlock finishers' }
+      ]
+    },
+    pool: {
+      id: 'pool',
+      title: 'PIXEL POOL 3D',
+      tagline: 'AUTHENTIC 3D BILLIARD PHYSICS DIRECTLY IN YOUR BROWSER',
+      genre: '3D SPORTS & ARCADE',
+      badge: 'FLAGSHIP TITLE',
+      icon: '#i-pool',
+      url: 'pool/index.html',
+      players: '1-2 Players (Solo CPU / Hotseat / Practice)',
+      tech: 'WebGL 3D Engine / Hardware Anti-Aliasing',
+      tags: ['FLAGSHIP', '3D WEBGL', 'REALISTIC PHYSICS', 'BILLIARDS', 'AI RIVAL', 'HOTSEAT'],
+      shortDesc: 'Realistic 8-ball billiard simulation in 3D WebGL with smooth ball rendering, cue spin, velocity dynamics, and an intelligent CPU rival.',
+      longDesc: `
+        <p>Pixel Pool 3D brings real 8-ball billiards to life with true angular momentum, ball collisions, and pocket physics running on a custom lightweight WebGL engine.</p>
+        <p>Experience ultra-crisp sphere geometry with reduced pixelation, hardware multi-sampling, and vibrant neon arcade illumination.</p>
+        <p>Master English spin (topspin, backspin, left/right draw), break the rack with full power control, and face off against CPU Pixie or your friends in local hotseat.</p>
+      `,
+      features: [
+        'Hardware anti-aliased 3D spheres with crisp numbers and smooth felt cloth.',
+        'Full 8-ball rules: Open table, solids vs stripes, 8-ball call, and scratch ball-in-hand.',
+        'Cue ball spin and draw pad for precision cue control.',
+        'CPU opponent Pixie with realistic aiming variance and angle calculations.',
+        'Free practice mode with table reset and ball potting tracking.',
+        'Syncs game wins and career streaks straight into your Arcade Pilot Passport.'
+      ],
+      controls: `
+        <b>AIMING:</b> Click/drag on the table or use Left/Right arrows to rotate cue angle.<br>
+        <b>POWER:</b> Slide the bottom power bar or hold Space bar to charge shot power.<br>
+        <b>SPIN:</b> Click or drag the red dot in the cue ball spin pad to apply English.<br>
+        <b>SHOOT:</b> Release Space bar or tap the SHOOT button.
+      `,
+      screenshots: [
+        { src: 'pool-1280x800.png', caption: 'DESKTOP 3D VIEW: Crisp WebGL table with neon arcade ambience' },
+        { src: 'pool-740x360.png', caption: 'LANDSCAPE HUD: Integrated power slider, spin pad, and turn tracker' },
+        { src: 'pool-360x640.png', caption: 'MOBILE PORTRAIT: Optimized touch controls and fluid framing' }
+      ]
+    },
+    scrabble: {
+      id: 'scrabble',
+      title: 'PIXEL SCRABBLE',
+      tagline: 'MULTIPLAYER WORD TILE STRATEGY WITH COMPLETE LEXICON',
+      genre: 'WORD & STRATEGY',
+      badge: 'PLAYABLE',
+      icon: '#i-scrabble',
+      url: 'scrabble/index.html',
+      players: '2 Players (Pass & Play Hotseat)',
+      tech: 'HTML5 Canvas / ENABLE Word Dictionary',
+      tags: ['WORD TILES', 'LOCAL 2P', 'STRATEGY', 'DICTIONARY', 'OFFLINE'],
+      shortDesc: 'Spell high-scoring words on classic bonus squares with friends using pass-the-phone privacy screens.',
+      longDesc: `
+        <p>Test your vocabulary and board tactics in Pixel Scrabble. Place letter tiles across double and triple word bonuses while defending your rack.</p>
+        <p>Features an official bundled ENABLE word dictionary for instant word verification, swap tile mechanics, and pass-the-phone privacy screens so your rack stays hidden.</p>
+      `,
+      features: [
+        'Standard 15x15 board with premium letter and word score tiles.',
+        'Pass-and-play secrecy screens to hide opponent racks between turns.',
+        'Built-in English lexicon verification.',
+        'Recall and tile swap mechanics.'
+      ],
+      controls: `
+        <b>TAP TILE:</b> Tap tile from your rack, then tap a board square to place.<br>
+        <b>RECALL:</b> Takes placed tiles back to your rack before submitting.<br>
+        <b>PASS:</b> Hand phone or device to the next player.
+      `,
+      screenshots: [
+        { src: 'scrabble-1280x800.png', caption: 'SCRABBLE BOARD: Full 15x15 layout with rack and letter points' },
+        { src: 'scrabble-740x360.png', caption: 'PASS & PLAY: Hidden rack screen for fair local matches' }
+      ]
+    },
+    connect4: {
+      id: 'connect4',
+      title: 'CONNECT 4',
+      tagline: 'DROP DISCS AND LINK FOUR TO WIN',
+      genre: 'BOARD & STRATEGY',
+      badge: 'PLAYABLE',
+      icon: '#i-connect4',
+      url: 'connect4/index.html',
+      players: '1-2 Players (Solo CPU / Hotseat)',
+      tech: 'HTML5 Canvas / Retro Sound',
+      tags: ['CLASSIC', 'SOLO VS CPU', 'HOTSEAT', 'PUZZLE'],
+      shortDesc: 'Drop chips into the 7x6 vertical grid. First to align 4 vertically, horizontally, or diagonally wins.',
+      longDesc: `<p>The timeless four-in-a-row vertical drop strategy game. Play against an eager AI or face a friend in two-player hotseat.</p>`,
+      features: ['Classic 7-column grid', 'Instant AI or 2P modes', 'Win detection in all directions'],
+      controls: `<b>TAP COLUMN:</b> Click or tap the column where you want to drop your disc.`,
+      screenshots: [
+        { src: 'landscape.png', caption: 'CONNECT 4: Grid and disc drop view' }
+      ]
+    },
+    ayo: {
+      id: 'ayo',
+      title: 'AYO',
+      tagline: 'ANCIENT MANCALA PIT SOWING AND CAPTURE',
+      genre: 'BOARD & STRATEGY',
+      badge: 'PLAYABLE',
+      icon: '#i-ayo',
+      url: 'ayo/index.html',
+      players: '1-2 Players (Solo / Hotseat)',
+      tech: 'HTML5 Canvas / Math Engine',
+      tags: ['MANCALA', 'ANCIENT', 'TACTICAL', 'SEEDS'],
+      shortDesc: 'Sow seeds into pits and capture sets of four. The first to capture 25 seeds claims victory.',
+      longDesc: `<p>Ayo is an authentic African Mancala variation where deep calculation and pit sowing strategy determine the master.</p>`,
+      features: ['Two rows of six pits', 'Continuous sowing rules', 'Career stats tracking'],
+      controls: `<b>TAP PIT:</b> Tap an occupied pit on your side to pick up and distribute seeds clockwise.`,
+      screenshots: [
+        { src: 'landscape.png', caption: 'AYO BOARD: Pit counters and seed distributions' }
+      ]
+    },
+    ludo: {
+      id: 'ludo',
+      title: 'LUDO',
+      tagline: 'RACE FOUR TOKENS HOME IN CLASSIC ARCADE STYLE',
+      genre: 'FAMILY & RACING',
+      badge: 'PLAYABLE',
+      icon: '#i-ludo',
+      url: 'ludo/index.html',
+      players: '1-4 Players (Local Hotseat)',
+      tech: 'HTML5 Canvas',
+      tags: ['BOARD RACE', 'DICE ROLLER', 'UP TO 4P', 'FAMILY'],
+      shortDesc: 'Roll sixes to enter the track, capture opponent tokens, and race four tokens safely into home base.',
+      longDesc: `<p>Ludo brings 4-player retro arcade race gaming to your screen. Roll dice, evade captures, and take all four pieces to the center triangle.</p>`,
+      features: ['Up to 4 local players', 'Animated dice roller', 'Safe zones and capture mechanics'],
+      controls: `<b>DICE ROLL:</b> Tap the dice to roll. Tap an active token to move forward.`,
+      screenshots: [
+        { src: 'landscape.png', caption: 'LUDO TRACK: Colorful 4-quadrant circuit' }
+      ]
+    }
+  };
+
+  // URL parameter parsing: ?game=chess
+  const params = new URLSearchParams(location.search);
+  const activeId = params.get('game') || params.get('id') || 'chess';
+  const g = CATALOG[activeId] || CATALOG.chess;
+
+  // Populate metadata
+  $('g-crumb').textContent = g.title;
+  $('g-genre').textContent = g.genre;
+  $('g-title').textContent = g.title;
+  $('g-tagline').textContent = g.tagline;
+  $('g-badge').textContent = g.badge;
+  $('g-side-title').textContent = g.title;
+  $('g-players').textContent = g.players;
+  $('g-tech').textContent = g.tech;
+  $('g-short-desc').textContent = g.shortDesc;
+  $('g-long-desc').innerHTML = g.longDesc;
+  $('g-controls').innerHTML = g.controls;
+  $('banner-play-title').textContent = 'Play ' + g.title;
+
+  // Icon
+  $('g-icon').querySelector('use').setAttribute('href', g.icon);
+
+  // Buttons
+  $('launch-btn').setAttribute('href', g.url);
+  $('banner-launch-btn').setAttribute('href', g.url);
+
+  // Tags
+  const tagBox = $('g-tags');
+  tagBox.innerHTML = '';
+  g.tags.forEach(t => {
+    const s = document.createElement('span');
+    s.className = 'bg-slate-800 text-slate-300 border border-slate-700 px-2 py-1 rounded';
+    s.textContent = t;
+    tagBox.appendChild(s);
+  });
+
+  // Features
+  const fBox = $('g-features');
+  fBox.innerHTML = '';
+  g.features.forEach(f => {
+    const li = document.createElement('li');
+    li.textContent = f;
+    fBox.appendChild(li);
+  });
+
+  // Screenshots setup
+  const mainImg = $('main-preview-img');
+  const capText = $('caption-text');
+  const strip = $('thumb-strip');
+  strip.innerHTML = '';
+
+  if (g.screenshots && g.screenshots.length) {
+    mainImg.src = g.screenshots[0].src;
+    capText.textContent = g.screenshots[0].caption;
+
+    g.screenshots.forEach((shot, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'flex-none w-24 h-16 rounded overflow-hidden border border-slate-700 hover:border-amber-400 transition-all ' + (idx === 0 ? 'thumb-active' : 'opacity-70');
+      btn.setAttribute('aria-label', shot.caption);
+      
+      const thumb = document.createElement('img');
+      thumb.src = shot.src;
+      thumb.alt = shot.caption;
+      thumb.className = 'w-full h-full object-cover';
+      btn.appendChild(thumb);
+
+      btn.addEventListener('click', () => {
+        strip.querySelectorAll('button').forEach(b => {
+          b.classList.remove('thumb-active');
+          b.classList.add('opacity-70');
+        });
+        btn.classList.add('thumb-active');
+        btn.classList.remove('opacity-70');
+        mainImg.src = shot.src;
+        capText.textContent = shot.caption;
+        try { S.blip(600); } catch(e){}
+      });
+
+      strip.appendChild(btn);
+    });
+  }
+
+  // Load career stats from Shared
+  try {
+    const prof = S.profile();
+    $('ci').textContent = (prof.name || 'YOU').slice(0, 3).toUpperCase();
+    if (g.id === 'chess') {
+      $('user-streak').textContent = prof.chess.streak || 0;
+      $('user-best').textContent = prof.chess.bestStreak || 0;
+      $('user-xp').textContent = (prof.xp || 0) + ' XP';
+    } else if (prof.games && prof.games[g.id]) {
+      const gm = prof.games[g.id];
+      $('user-streak').textContent = gm.streak || 0;
+      $('user-best').textContent = gm.best || 0;
+      $('user-xp').textContent = (prof.byGame && prof.byGame[g.id] ? prof.byGame[g.id].xp : 0) + ' XP';
+    }
+  } catch(e){}
+
+  // Sound toggle
+  $('snd').addEventListener('click', () => {
+    S.sound.toggle();
+    const on = S.sound.get();
+    $('snd').textContent = 'SOUND: ' + (on ? 'ON' : 'OFF');
+    $('snd').setAttribute('aria-pressed', on);
+    S.blip(880);
+  });
+
+  // Other recommended games
+  const othersList = $('other-games-list');
+  othersList.innerHTML = '';
+  ['chess', 'pool', 'scrabble', 'connect4', 'ayo', 'ludo'].filter(id => id !== g.id).slice(0, 4).forEach(id => {
+    const item = CATALOG[id];
+    if (!item) return;
+    const a = document.createElement('a');
+    a.href = 'store.html?game=' + id;
+    a.className = 'flex items-center justify-between p-3 bg-slate-950/60 border border-slate-800 hover:border-amber-400 rounded-lg group transition-all';
+    a.innerHTML = `
+      <div class="flex items-center gap-3">
+        <div class="bg-black/50 p-2 rounded border border-slate-700">
+          <svg class="w-5 h-5" viewBox="0 0 16 16"><use href="${item.icon}"/></svg>
+        </div>
+        <div>
+          <div class="text-[9px] text-white font-bold group-hover:text-amber-400">${item.title}</div>
+          <div class="text-[7px] text-slate-500">${item.genre}</div>
+        </div>
+      </div>
+      <span class="text-[7px] text-amber-400 font-bold">VIEW &rarr;</span>
+    `;
+    othersList.appendChild(a);
+  });
+
+  // Render trophies for this game
+  const trophiesList = $('game-trophies-list');
+  if (trophiesList && window.ArcadeTrophies) {
+    trophiesList.innerHTML = '';
+    const trophies = window.ArcadeTrophies.list(g.id);
+    if (!trophies || trophies.length === 0) {
+      trophiesList.innerHTML = '<div class="text-[8px] text-slate-500 italic p-2">Trophies coming soon.</div>';
+    } else {
+      trophies.slice(0, 5).forEach(t => {
+        const unlocked = window.ArcadeTrophies.isUnlocked(t.id);
+        const tierIcons = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '🏆' };
+        const tierColors = {
+          bronze: 'text-amber-600',
+          silver: 'text-slate-300',
+          gold: 'text-yellow-400',
+          platinum: 'text-cyan-300'
+        };
+        const el = document.createElement('div');
+        el.className = `flex items-center justify-between p-2 rounded border ${unlocked ? 'bg-amber-950/20 border-amber-500/40' : 'bg-slate-950/40 border-slate-800/80 opacity-70'}`;
+        el.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-sm">${tierIcons[t.tier] || '🏆'}</span>
+            <div>
+              <div class="text-[8px] font-bold ${unlocked ? 'text-white' : 'text-slate-400'}">${t.hidden && !unlocked ? 'SECRET TROPHY' : t.title}</div>
+              <div class="text-[7px] text-slate-500">${t.hidden && !unlocked ? 'Play to reveal criteria' : t.desc}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[7px] font-mono ${tierColors[t.tier] || 'text-yellow-400'}">+${t.xp} XP</div>
+            <div class="text-[6px] ${unlocked ? 'text-emerald-400' : 'text-slate-600'} font-bold">${unlocked ? 'UNLOCKED' : 'LOCKED'}</div>
+          </div>
+        `;
+        trophiesList.appendChild(el);
+      });
+      if (trophies.length > 5) {
+        const moreLink = document.createElement('a');
+        moreLink.href = 'trophies.html';
+        moreLink.className = 'block text-center text-[7px] text-amber-400/80 hover:text-amber-300 pt-1';
+        moreLink.textContent = `+${trophies.length - 5} more trophies in Trophy Room →`;
+        trophiesList.appendChild(moreLink);
+      }
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

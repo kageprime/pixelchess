@@ -202,14 +202,18 @@ void main(){
   vec2 q = vUv - 0.5;
   c *= 1.0 - dot(q, q) * 0.9;
   c = (c - 0.5) * 1.08 + 0.5 + uFlash;
-  float t = bayer4(gl_FragCoord.xy) - 0.47;
-  float L = uLevels - 1.0;
-  c = floor(clamp(c, 0.0, 1.0) * L + 0.5 + t * 0.7) / L;
+  if (uLevels < 64.0) {
+    float t = bayer4(gl_FragCoord.xy) - 0.47;
+    float L = uLevels - 1.0;
+    c = floor(clamp(c, 0.0, 1.0) * L + 0.5 + t * 0.7) / L;
+  } else {
+    c = clamp(c, 0.0, 1.0);
+  }
   gl_FragColor = vec4(c, 1.0);
 }`;
 
 function createEngine(canvas) {
-  const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+  const gl = canvas.getContext('webgl', { antialias: true, alpha: false, powerPreference: 'high-performance' });
   if (!gl) throw new Error('WebGL is not available');
   const sh = (type, src) => {
     const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
@@ -239,8 +243,8 @@ function createEngine(canvas) {
     if (fbo) { gl.deleteFramebuffer(fbo); gl.deleteTexture(fboTex); gl.deleteRenderbuffer(fboDepth); }
     fboTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, fboTex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     fboDepth = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, fboDepth);
@@ -254,7 +258,7 @@ function createEngine(canvas) {
   const eng = {
     gl, canvas,
     get w() { return W; }, get h() { return H; },
-    levels: 8, flash: 0,
+    levels: 128, flash: 0,
     resize(w, h) { W = Math.max(2, w | 0); H = Math.max(2, h | 0); canvas.width = W; canvas.height = H; makeTarget(); },
     geom(g) {
       const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, g.v, gl.STATIC_DRAW);
@@ -264,8 +268,8 @@ function createEngine(canvas) {
     texture(cv, repeat) {
       const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       const wrap = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);

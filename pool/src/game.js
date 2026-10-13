@@ -49,14 +49,14 @@ const scene = {
   amb: [0.50, 0.47, 0.66], hemi: [0.10, 0.09, 0.16],
   light: { pos: [0, 105, 8], col: [1.05, 0.97, 0.82] }
 };
-E.levels = 16;
+E.levels = 128;
 const cam = { eye: [0, 100, 90], target: [0, 0, 0], fov: 40 * Math.PI / 180, near: 5, far: 700 };
 const mkMat = o => Object.assign({ color: [1, 1, 1], emis: [0, 0, 0], tex: null, spec: 0, shin: 16, alpha: 1, uv: [1, 1], unlit: false, transparent: false, additive: false, double: false }, o);
 const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 const addMesh = (geom, mat, model) => { const m = { geom, mat, model: model || Mat.identity(), visible: true }; scene.meshes.push(m); return m; };
 const cvTex = (w, h, draw, repeat = true) => {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; draw(x, w, h);
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = true; draw(x, w, h);
   return { tex: E.texture(c, repeat), cv: c, ctx: x };
 };
 
@@ -170,20 +170,20 @@ function buildTable() {
 buildRoom(); buildTable();
 
 /* ---------- balls ---------- */
-const ballGeom = E.geom(Geo.sphere(R, 16, 12));
+const ballGeom = E.geom(Geo.sphere(R, 32, 24));
 const shadowGeom = G.plane(R * 2.9, R * 2.9);
 const shadowMat = mkMat({ tex: shadowT, unlit: true, transparent: true });
 function ballTexture(n) {
-  return cvTex(64, 32, (x, w, h) => {
+  return cvTex(128, 64, (x, w, h) => {
     const col = ballColor(n), stripe = n > 8;
     x.fillStyle = (stripe || n === 0) ? '#f4efe4' : col; x.fillRect(0, 0, w, h);
-    if (stripe) { x.fillStyle = col; x.fillRect(0, 9, w, 14); }
+    if (stripe) { x.fillStyle = col; x.fillRect(0, 18, w, 28); }
     if (n === 0) {
-      x.fillStyle = '#d24a4a'; x.fillRect(15, 15, 3, 3); x.fillRect(47, 15, 3, 3);
+      x.fillStyle = '#d24a4a'; x.fillRect(30, 30, 6, 6); x.fillRect(94, 30, 6, 6);
     } else {
-      for (const cx of [16, 48]) {
-        x.fillStyle = '#f4efe4'; x.beginPath(); x.arc(cx, 16, 6.5, 0, Math.PI * 2); x.fill();
-        x.fillStyle = '#17151c'; x.font = 'bold 9px monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), cx, 17);
+      for (const cx of [32, 96]) {
+        x.fillStyle = '#f4efe4'; x.beginPath(); x.arc(cx, 32, 13, 0, Math.PI * 2); x.fill();
+        x.fillStyle = '#17151c'; x.font = 'bold 16px "Press Start 2P", monospace, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), cx, 33);
       }
     }
   }).tex;
@@ -207,7 +207,7 @@ const cueParts = [];
     { off: 40.5, h: 1.6, rb: 0.66, rt: 0.68, c: '#ff5fa8' },
     { off: 42.1, h: 20, rb: 0.68, rt: 0.98, c: '#3a2216' }
   ];
-  for (const d of defs) cueParts.push({ off: d.off, mesh: addMesh(E.geom(Geo.cyl(d.rb, d.rt, d.h, 6)), mkMat({ color: hex(d.c), spec: 0.3, shin: 16 })) });
+  for (const d of defs) cueParts.push({ off: d.off, mesh: addMesh(E.geom(Geo.cyl(d.rb, d.rt, d.h, 16)), mkMat({ color: hex(d.c), spec: 0.3, shin: 16 })) });
 })();
 const cueS = { vis: false, pull: 2, sx: 0, sy: 0 };
 function placeCue() {
@@ -782,8 +782,8 @@ function fitFor(yaw, pitchDeg, topM, botM) {
 let fitCache = {};
 function resize() {
   cssW = innerWidth; cssH = innerHeight;
-  const px = Math.max(2, Math.round(Math.max(cssW, cssH) / 600));
-  E.resize(Math.ceil(cssW / px), Math.ceil(cssH / px));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  E.resize(Math.round(cssW * dpr), Math.round(cssH * dpr));
   const hudOn = !$('hud').hidden;
   const topM = hudOn ? $('top').offsetHeight + (matchMedia('(max-height:520px)').matches ? 4 : 30) : 20;
   const botM = hudOn ? $('bottom').offsetHeight + 14 : 20;
@@ -997,9 +997,15 @@ try{
     onSound:function(){toggleSfx()},
     onQuit:function(){var r=shSnapshot();if(r)ArcadeShell.save('pool',r);}});
   ArcadeShell.autosave('pool',function(){return shSnapshot()});
-function shMenuSync(){try{$('bContinue').hidden=!(ArcadeShell.has('pool')&&state==='menu')}catch(e){}}
+function shMenuSync(){try{$('bContinue').hidden=!(ArcadeShell.has('pool')&&state==='menu')}catch(e){}try{shPlaySub()}catch(e){}}
 $('bContinue').addEventListener('click',()=>{Snd.init();shRestore()});
 shMenuSync();
+function shPlaySub(){try{var m={cpu:'VS CPU','2p':'2 PLAYERS',practice:'PRACTICE'}[lastSettings.mode]||'VS CPU';
+var d=['ROOKIE','PRO'][lastSettings.diff]||'PRO';
+$('bPlaySub').textContent=m+(lastSettings.mode==='cpu'?' \u00b7 '+d:'')}catch(e){}}
+$('bPlay').addEventListener('click',()=>{Snd.init();newGame(lastSettings.mode,lastSettings.diff)});
+$('menu').addEventListener('click',()=>{shPlaySub()});
+shPlaySub();
 }catch(e){}
 $('bAgain').addEventListener('click', () => { Snd.init(); newGame(lastSettings.mode, lastSettings.diff); });
 $('bBack').addEventListener('click', () => { Snd.init(); toMenu(); });

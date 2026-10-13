@@ -4,6 +4,8 @@ Retro arcade lobby plus pixel-art games. Static site, no build step: deploy the 
 
 ```
 /index.html            the hub (lobby): Option B catalog, passport chip, spotlight, sound toggle
+/store.html            per-game store pages (details, trophies preview, play links)
+/trophies.html         trophy room: per-game tabs, locked/hidden/in-progress, local vs verified badges
 /chess/index.html      Pixel Chess (playable)
 /ayo/index.html        Ayo 3D: mancala sowing vs CPU or 2 players (playable)
 /connect4/index.html   Connect 4: drop discs vs CPU or 2 players (playable)
@@ -16,6 +18,8 @@ Retro arcade lobby plus pixel-art games. Static site, no build step: deploy the 
 /shared/shared.js      Shared.addXP(game, n), Shared.profile(), Shared.sound, Shared.blip()
 /shared/shell.js        ArcadeShell: sidebar drawer, snapshots (pixelarcade.save.<game>), start helpers
 /shared/shell.css       shell chrome styles (.sh-*), self-contained dark-arcade palette
+/shared/trophies.js     ArcadeTrophies: declarative trophy engine (predicates, local store, toast, XP via Shared)
+/shared/trophies-data.js trophy definitions (data only, validated by schema)
 /shared/vendor/        vendored files (font + OFL, three.js, tailwind): see vendor/README.txt
 /sw.js                 service worker: precaches everything for offline play
 /api/scores.js         world leaderboards + ladder (Vercel serverless + Upstash)
@@ -42,6 +46,19 @@ One cross-game chrome, no framework: `shared/shell.js` + `shared/shell.css` (dep
 on new game and on game over. Corrupt or foreign snapshots fail closed (validated, never
 trusted). The hub shows a CONTINUE PLAYING row from `ArcadeShell.list()` plus catalog search.
 Chess pilots the start-screen template: one PLAY call-to-action, mode cards, secondary rows.
+Pool's menu and Scrabble's title follow the same template (PLAY, mode cards, CONTINUE);
+the trio's side panels expose PLAY (restarts with the chosen options) with pressed-state modes.
+The hub marks online-capable cabinets with an ONLINE tag (chess today).
+
+## Trophies
+
+Declarative, original pixel-cup trophies (bronze/silver/gold/platinum): definitions live in
+`shared/trophies-data.js` (data only, schema-validated), the engine in `shared/trophies.js`
+evaluates predicates, persists to `pixelarcade.trophies` (separate from `pixelchess.v1`),
+shows a toast, and awards XP once per trophy through `Shared.addXP` (idempotent by id, so
+local and verified unlocks never double-pay). Games emit events (`ArcadeTrophies.emit`,
+guarded so pages work with the scripts absent). Browse in `trophies.html`; per-game
+previews in `store.html`. Full design in `PIXEL_ARCADE_MASTER_SPEC.md`.
 
 ## Pixel Chess
 
@@ -86,7 +103,8 @@ Open index.html in a browser (or serve the repo root; the hub is index.html).
 node hub-test.js      lobby: cards, links, search, continue row, layout at 3 sizes, profile chip, XP, sound, offline
 node pool-test.js     pool: rack, sim, CPU, HUD input, layout, XP
 node newgames-test.js ayo/connect4/ludo: shared XP wiring, shell wiring, connect4 gameplay, 3D boot, lobby links
-node shell-test.js    shell: chess title hierarchy, drawer, snapshot quit/resume round-trips (chess, connect4, ayo, ludo)
+node shell-test.js    shell: chess title hierarchy, drawer, snapshot quit/resume round-trips (all six games), start screens
+node trophies-test.js  trophies: definitions, predicates, unlocks, trophy room and store preview
 node scrabble-test.js words: board, scoring, blanks, bingo, word list, swap/pass/end, XP, layout
 node engine-test.js   rules (perft), SAN, CPU picks and personalities, music tables
 node api-test.js      world leaderboard + signalling API (mocked store)

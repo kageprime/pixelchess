@@ -76,6 +76,10 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
 
   <!-- ACTION TOGGLES -->
   <div class="flex items-center gap-2 text-[8px]">
+    <a href="trophies.html" id="trophy-btn" class="bg-slate-800 hover:bg-slate-700 border border-amber-400/50 text-amber-300 px-3 py-2 rounded flex items-center gap-1.5 min-h-[44px]" title="Trophy Room">
+      <span>🏆</span>
+      <span id="trophy-badge">TROPHIES</span>
+    </a>
     <button id="snd" type="button" aria-pressed="true" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-slate-200 min-h-[44px]">SOUND: ON</button>
   </div>
 </header>
@@ -89,32 +93,70 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
 
 <main class="w-full max-w-5xl space-y-8">
 
-  <!-- FEATURED HERO SPOTLIGHT -->
+  <!-- FEATURED HERO SPOTLIGHT: CHESS & POOL -->
   <div class="bg-gradient-to-r from-cyan-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
     <div class="space-y-3 z-10 max-w-lg">
-      <span class="bg-cyan-500/20 text-cyan-300 border border-cyan-400 text-[8px] px-2.5 py-1 rounded inline-block">
-        ★ SPOTLIGHT GAME OF THE WEEK
-      </span>
-      <h1 class="text-2xl text-yellow-300 font-bold tracking-wider">PIXEL POOL 3D</h1>
-      <p class="text-[9px] text-slate-300 leading-relaxed">
-        REALISTIC 3D BILLIARD PHYSICS DIRECTLY IN YOUR BROWSER. COMPLETE BREAK SIMULATION, STRIPES VS SOLIDS, AND A SHARP CPU RIVAL.
-      </p>
-      <div class="flex flex-wrap gap-4 pt-2 items-center">
-        <a href="pool/index.html" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs px-5 py-3 rounded shadow-[0_3px_0_#0e7490]">
-          ► PLAY NOW
-        </a>
-        <a id="start" href="#catalog" class="border border-slate-500 hover:border-slate-300 text-slate-300 text-xs px-5 py-3 rounded">
-          BROWSE ALL ↓
-        </a>
-        <div class="flex items-center gap-2 text-[8px] text-slate-400">
-          <span>● 1-2 PLAYERS</span>
-          <span>● 3D WEBGL</span>
+      <div class="flex items-center gap-2">
+        <span class="bg-cyan-500/20 text-cyan-300 border border-cyan-400 text-[8px] px-2.5 py-1 rounded inline-block">
+          ★ FEATURED FLAGSHIP GAMES
+        </span>
+        <div class="flex gap-1" role="tablist" aria-label="Featured flagship switcher">
+          <button id="feat-pool-btn" type="button" class="bg-cyan-500 text-slate-950 font-bold text-[7px] px-2 py-1 rounded min-h-[30px]">POOL</button>
+          <button id="feat-chess-btn" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[7px] px-2 py-1 rounded min-h-[30px]">CHESS</button>
+        </div>
+      </div>
+
+      <!-- POOL PANE -->
+      <div id="feat-pool-pane" class="space-y-3">
+        <h1 class="text-2xl text-yellow-300 font-bold tracking-wider">PIXEL POOL 3D</h1>
+        <p class="text-[9px] text-slate-300 leading-relaxed">
+          REALISTIC 3D BILLIARD PHYSICS DIRECTLY IN YOUR BROWSER. COMPLETE BREAK SIMULATION, STRIPES VS SOLIDS, AND A SHARP CPU RIVAL.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-2 items-center">
+          <a href="store.html?game=pool" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs px-5 py-3 rounded shadow-[0_3px_0_#0e7490]">
+            VIEW GAME PAGE ↗
+          </a>
+          <a id="start" href="#catalog" class="border border-slate-500 hover:border-slate-300 text-slate-300 text-xs px-4 py-3 rounded">
+            BROWSE ALL ↓
+          </a>
+          <div class="flex items-center gap-2 text-[8px] text-slate-400">
+            <span>● 1-2 PLAYERS</span>
+            <span>● 3D WEBGL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHESS PANE -->
+      <div id="feat-chess-pane" class="space-y-3" hidden>
+        <h1 class="text-2xl text-yellow-300 font-bold tracking-wider">PIXEL CHESS</h1>
+        <p class="text-[9px] text-slate-300 leading-relaxed">
+          ACCLAIMED RETRO CHESS WITH A 3-TIER AI BOT LADDER, UNLOCKABLE RETRO THEMES &amp; FINISHERS, AND P2P ONLINE ROOMS.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-2 items-center">
+          <a href="store.html?game=chess" class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-5 py-3 rounded shadow-[0_3px_0_#991b1b]">
+            VIEW GAME PAGE ↗
+          </a>
+          <a href="#catalog" class="border border-slate-500 hover:border-slate-300 text-slate-300 text-xs px-4 py-3 rounded">
+            BROWSE ALL ↓
+          </a>
+          <div class="flex items-center gap-2 text-[8px] text-slate-400">
+            <span>● 1-2 PLAYERS</span>
+            <span>● ONLINE PLAY</span>
+          </div>
         </div>
       </div>
     </div>
-    <div class="z-10 text-center bg-black/40 border border-cyan-500/30 p-6 rounded-2xl backdrop-blur">
-      <span class="text-6xl block mb-2">🎱</span>
-      <div class="text-[8px] text-cyan-300" id="spot-stat">NO GAMES YET</div>
+
+    <!-- GRAPHIC EMBLEM / STATS -->
+    <div class="z-10 text-center bg-black/40 border border-cyan-500/30 p-6 rounded-2xl backdrop-blur min-w-[160px]">
+      <div id="feat-pool-emblem">
+        <span class="text-6xl block mb-2">🎱</span>
+        <div class="text-[8px] text-cyan-300" id="spot-stat">NO GAMES YET</div>
+      </div>
+      <div id="feat-chess-emblem" hidden>
+        <span class="text-6xl block mb-2">♔</span>
+        <div class="text-[8px] text-amber-300" id="chess-spot-stat">NO GAMES YET</div>
+      </div>
     </div>
   </div>
 
@@ -142,26 +184,27 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
     <div class="grid gap-5" id="grid" aria-label="Games">
 
       <!-- CARD 1: CHESS -->
-      <a class="card lit bg-slate-800/80 border border-slate-700 hover:border-red-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="chess/index.html" data-game="chess" data-status="ready" data-cat="board hotseat" style="--c:#e8433a">
+      <a class="card lit bg-slate-800/80 border border-slate-700 hover:border-red-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=chess" data-game="chess" data-status="ready" data-cat="board hotseat" style="--c:#e8433a">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-chess"/></svg></div>
           <div>
             <div class="flex items-center gap-2 mb-1">
               <h2 class="text-xs text-white font-bold">CHESS</h2>
               <span class="bd bg-emerald-900/60 text-emerald-400 text-[7px] px-1.5 py-0.5 rounded border border-emerald-700">PLAYABLE</span>
+              <span class="onl text-[7px] px-1.5 py-0.5 rounded border border-cyan-400 text-cyan-300" title="Online play supported">ONLINE</span>
             </div>
             <p class="text-[8px] text-slate-400 leading-relaxed">Climb the 3-tier bot ladder with custom retro pieces.</p>
           </div>
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">1-2 PLAYERS</span>
-          <span class="bg-red-600 group-hover:bg-red-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-red-600 group-hover:bg-red-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-chess">NO GAMES YET</div>
       </a>
 
       <!-- CARD 2: AYO -->
-      <a class="card bg-slate-800/80 border border-slate-700 hover:border-orange-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="ayo/index.html" data-game="ayo" data-status="ready" data-cat="board hotseat" style="--c:#f2a33a">
+      <a class="card bg-slate-800/80 border border-slate-700 hover:border-orange-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=ayo" data-game="ayo" data-status="ready" data-cat="board hotseat" style="--c:#f2a33a">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-ayo"/></svg></div>
           <div>
@@ -174,7 +217,7 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">1-2 PLAYERS</span>
-          <span class="bg-orange-600 group-hover:bg-orange-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-orange-600 group-hover:bg-orange-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-ayo">NO GAMES YET</div>
       </a>
@@ -216,7 +259,7 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
       </a>
 
       <!-- CARD 5: POOL -->
-      <a class="card bg-slate-800/80 border border-slate-700 hover:border-cyan-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="pool/index.html" data-game="pool" data-status="ready" data-cat="hotseat" style="--c:#1fb5d4">
+      <a class="card bg-slate-800/80 border border-slate-700 hover:border-cyan-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=pool" data-game="pool" data-status="ready" data-cat="hotseat" style="--c:#1fb5d4">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-pool"/></svg></div>
           <div>
@@ -229,13 +272,13 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">1-2 PLAYERS</span>
-          <span class="bg-cyan-600 group-hover:bg-cyan-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-cyan-600 group-hover:bg-cyan-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-pool">NO GAMES YET</div>
       </a>
 
       <!-- CARD 6: SCRABBLE -->
-      <a class="card bg-slate-800/80 border border-slate-700 hover:border-amber-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="scrabble/index.html" data-game="scrabble" data-status="ready" data-cat="board hotseat" style="--c:#f2c230">
+      <a class="card bg-slate-800/80 border border-slate-700 hover:border-amber-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=scrabble" data-game="scrabble" data-status="ready" data-cat="board hotseat" style="--c:#f2c230">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-scrabble"/></svg></div>
           <div>
@@ -248,13 +291,13 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">2P PASS &amp; PLAY</span>
-          <span class="bg-amber-600 group-hover:bg-amber-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-amber-600 group-hover:bg-amber-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-scrabble">NO GAMES YET</div>
       </a>
 
       <!-- CARD 7: CONNECT 4 -->
-      <a class="card bg-slate-800/80 border border-slate-700 hover:border-rose-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="connect4/index.html" data-game="connect4" data-status="ready" data-cat="board hotseat" style="--c:#ff4f6d">
+      <a class="card bg-slate-800/80 border border-slate-700 hover:border-rose-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=connect4" data-game="connect4" data-status="ready" data-cat="board hotseat" style="--c:#ff4f6d">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-connect4"/></svg></div>
           <div>
@@ -267,13 +310,13 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">1-2 PLAYERS</span>
-          <span class="bg-rose-600 group-hover:bg-rose-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-rose-600 group-hover:bg-rose-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-connect4">NO GAMES YET</div>
       </a>
 
       <!-- CARD 8: LUDO -->
-      <a class="card bg-slate-800/80 border border-slate-700 hover:border-emerald-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="ludo/index.html" data-game="ludo" data-status="ready" data-cat="hotseat" style="--c:#3ddc84">
+      <a class="card bg-slate-800/80 border border-slate-700 hover:border-emerald-500/80 rounded-xl p-4 flex flex-col justify-between transition-all group shadow-md" href="store.html?game=ludo" data-game="ludo" data-status="ready" data-cat="hotseat" style="--c:#3ddc84">
         <div class="flex items-start gap-4 mb-4">
           <div class="bg-black/50 p-3 rounded-lg border border-slate-700"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-ludo"/></svg></div>
           <div>
@@ -286,7 +329,7 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-[8px]">
           <span class="text-slate-400">1-4 PLAYERS</span>
-          <span class="bg-emerald-600 group-hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold">PLAY</span>
+          <span class="bg-emerald-600 group-hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold min-h-[32px] flex items-center">VIEW ↗</span>
         </div>
         <div class="best mt-2 text-[7px] text-slate-500" id="best-ludo">NO GAMES YET</div>
       </a>
@@ -302,6 +345,8 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
 
 <script src="shared/shared.js"></script>
 <script src="shared/shell.js"></script>
+<script src="shared/trophies-data.js"></script>
+<script src="shared/trophies.js"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id),S=window.Shared,pad=n=>String(n).padStart(6,'0');
@@ -320,17 +365,41 @@ a.card.lit{outline:2px solid #fbbf24;outline-offset:2px}
   $('best-connect4').textContent=line('connect4');
   $('best-ludo').textContent=line('ludo');
   $('spot-stat').textContent=pl.played?'CURRENT BEST STREAK: '+pl.best:'NO GAMES YET';
+  if($('chess-spot-stat'))$('chess-spot-stat').textContent=p.chess.played?'CURRENT BEST STREAK: '+p.chess.bestStreak:'NO GAMES YET';
   const on2=S.sound.get();$('snd').textContent='SOUND: '+(on2?'ON':'OFF');$('snd').setAttribute('aria-pressed',on2);
+  if(window.ArcadeTrophies&&$('trophy-badge')){
+    const sum=ArcadeTrophies.getSummary();
+    $('trophy-badge').textContent=sum.totalUnlocked>0?'TROPHIES: '+sum.totalUnlocked:'TROPHIES';
+  }
   try{renderContinue()}catch(e){}
  }
- paint();addEventListener('shared:profile',paint);addEventListener('pageshow',paint);
+ paint();addEventListener('shared:profile',paint);addEventListener('pageshow',paint);addEventListener('arcade:trophies',paint);
  $('snd').addEventListener('click',()=>{S.sound.toggle();paint();S.blip(880)});
 
- const idle='USE THE ARROW KEYS TO MOVE, ENTER TO START.';
+ // Featured flagship switcher: Pool & Chess
+ const fPoolBtn=$('feat-pool-btn'),fChessBtn=$('feat-chess-btn');
+ const fPoolPane=$('feat-pool-pane'),fChessPane=$('feat-chess-pane');
+ const fPoolEmb=$('feat-pool-emblem'),fChessEmb=$('feat-chess-emblem');
+ function setFeatured(game){
+  const isPool=game==='pool';
+  if(fPoolBtn)fPoolBtn.className=isPool?'bg-cyan-500 text-slate-950 font-bold text-[7px] px-2 py-1 rounded min-h-[30px]':'bg-slate-800 hover:bg-slate-700 text-slate-300 text-[7px] px-2 py-1 rounded min-h-[30px]';
+  if(fChessBtn)fChessBtn.className=!isPool?'bg-amber-400 text-slate-950 font-bold text-[7px] px-2 py-1 rounded min-h-[30px]':'bg-slate-800 hover:bg-slate-700 text-slate-300 text-[7px] px-2 py-1 rounded min-h-[30px]';
+  if(fPoolPane)fPoolPane.hidden=!isPool;
+  if(fChessPane)fChessPane.hidden=isPool;
+  if(fPoolEmb)fPoolEmb.hidden=!isPool;
+  if(fChessEmb)fChessEmb.hidden=isPool;
+  try{S.blip(isPool?740:880)}catch(e){}
+ }
+ if(fPoolBtn&&fChessBtn){
+  fPoolBtn.addEventListener('click',()=>setFeatured('pool'));
+  fChessBtn.addEventListener('click',()=>setFeatured('chess'));
+ }
+
+ const idle='USE THE ARROW KEYS TO MOVE, ENTER TO VIEW.';
  function describe(c){
   if(!c){hint.textContent=idle;return}
   const soon=c.classList.contains('soon'),n=c.querySelector('h2').textContent,t=c.querySelector('p').textContent;
-  hint.innerHTML='<b class="text-amber-400">&#9654; '+n+'</b> '+t+' '+(soon?'COMING SOON.':'PRESS ENTER TO START.');
+  hint.innerHTML='<b class="text-amber-400">&#9654; '+n+'</b> '+t+' '+(soon?'COMING SOON.':'PRESS ENTER TO VIEW.');
  }
  describe(null);
 

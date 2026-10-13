@@ -28,9 +28,10 @@ const server = http.createServer((req, res) => {
     const cards = await pg.$$eval('.card', a => a.map(x => ({ href: x.getAttribute('href'), dis: x.getAttribute('aria-disabled'), tab: x.getAttribute('tabindex'), t: x.querySelector('h2').textContent, b: x.querySelector('.bd').textContent })));
     ok('eight game cards in the static markup', cards.length === 8, cards.length);
     ok('card order is Chess, Ayo, Draughts, Shogi, Pool, Scrabble, Connect 4, Ludo', cards.map(c => c.t).join() === 'CHESS,AYO,DRAUGHTS,SHOGI,POOL,SCRABBLE,CONNECT 4,LUDO', cards.map(c => c.t));
-    ok('Chess, Ayo, Pool, Scrabble, Connect 4 and Ludo are PLAYABLE and link to their pages', cards.filter(c => c.href).length === 6 && cards[0].href === 'chess/index.html' && cards[1].href === 'ayo/index.html' && cards[4].href === 'pool/index.html' && cards[5].href === 'scrabble/index.html' && cards[6].href === 'connect4/index.html' && cards[7].href === 'ludo/index.html' && [0, 1, 4, 5, 6, 7].every(i => cards[i].b === 'PLAYABLE'), cards);
+    ok('Chess, Ayo, Pool, Scrabble, Connect 4 and Ludo are PLAYABLE and link to their store pages', cards.filter(c => c.href).length === 6 && cards[0].href === 'store.html?game=chess' && cards[1].href === 'store.html?game=ayo' && cards[4].href === 'store.html?game=pool' && cards[5].href === 'store.html?game=scrabble' && cards[6].href === 'store.html?game=connect4' && cards[7].href === 'store.html?game=ludo' && [0, 1, 4, 5, 6, 7].every(i => cards[i].b === 'PLAYABLE'), cards);
     ok('the other two are SOON, aria-disabled, focusable, no href', [2, 3].every(i => cards[i].b === 'SOON' && cards[i].dis === 'true' && cards[i].tab === '0' && !cards[i].href));
     ok('every card has an inline pixel icon', (await pg.$$('.card svg.ic')).length === 8);
+    ok('chess card carries an ONLINE tag', (await pg.$eval('[data-game="chess"] .onl', e => e.textContent)) === 'ONLINE');
     await ctx.close();
   }
 
@@ -105,8 +106,8 @@ const server = http.createServer((req, res) => {
     ok('hint line describes the focused cabinet', /CHESS/.test(await pg.locator('#hint').innerText()));
     ok('footer hints name the controls', /SELECT/.test(await pg.locator('.ft').innerText()) && /ENTER/.test(await pg.locator('.ft').innerText()));
     await pg.keyboard.press('Enter');
-    await pg.waitForURL('**/chess/index.html');
-    ok('Enter opens the focused game', (await pg.title()).length > 0);
+    await pg.waitForURL('**/store.html?game=chess');
+    ok('Enter opens the focused game store page', (await pg.title()).length > 0);
     await pg.goto(base);
 
     // profile data from chess shows in the header

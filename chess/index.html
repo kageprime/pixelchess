@@ -28,8 +28,8 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;text-align:center;-webkit-font-smoothing:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.07) 2px 3px)}
 .px{background:var(--panel);box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge)}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;margin:0 auto}
-#cv{touch-action:none}
+canvas{display:block;margin:0 auto}
+#cv,#bgc{image-rendering:auto;touch-action:none}
 #bgc{position:fixed;inset:0;width:100%;height:100%;margin:0;z-index:0;pointer-events:none}
 button{font:inherit;font-size:10px;color:var(--fg);background:var(--panel);border:0;padding:12px 12px;margin:8px 6px;cursor:pointer;min-height:44px;box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge),inset 0 -4px 0 0 rgba(0,0,0,.22)}
 @media (hover:hover){button:hover{background:var(--accent);color:#fff}}
@@ -252,7 +252,10 @@ button:disabled{opacity:.35;pointer-events:none}
 <div class="scr dim" id="s-help"><div class="px card"><h2>HOW TO PLAY</h2>
  <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.<br>TUTOR IN PAUSE EXPLAINS EVERY MOVE.<br>FINISHERS UNLOCK AS YOU WIN - EQUIP THEM UNDER THEMES.</p>
  <button class="big" id="hb">BACK</button></div></div>
+<script src="../shared/shared.js"></script>
 <script src="../shared/shell.js"></script>
+<script src="../shared/trophies-data.js"></script>
+<script src="../shared/trophies.js"></script>
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const $=id=>document.getElementById(id),Q=q=>document.querySelectorAll(q);
@@ -729,11 +732,37 @@ const lab=ms.length?(ck?'CHECK!':(ai&&turn=='b'?'THINKING':'')):(ck?'MATE':'DRAW
 $('sw').textContent=turn=='w'?lab:'';$('sb').textContent=turn=='b'?lab:'';
 const thk=lab=='THINKING';$('sb').classList.toggle('th',thk);$('pb').classList.toggle('thk',thk);
 if(!ms.length){over=true;if(!recorded)finishGame(ck);const id=gid;setTimeout(()=>{if(id==gid&&inGame&&over)showOver(ck,flagWin)},ck&&fx?3300:1100)}}
-function finishGame(ck){recorded=true;if(gmode!='ladder')return;
-const res=ck?(turn=='b'?'w':'l'):'d',cnt=(t,f)=>f?hist.filter(h=>h.t==t&&h.cap).length:0;let left=0;
-for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]&&b[r][c][0]=='w')left++;
-const rec={id:opp.id,res,mate:!!ck,plies:hist.length,ms:Date.now()-t0g-pausedMs,caps:cnt('w',1),left,undos:3-undosLeft,san:hist.map(h=>h.san).join(' '),date:Date.now()};
-const out=recordResult(prof,rec);saveProfile(store,prof);lastOut={out,res};submitScore(rec,out)}
+function finishGame(ck){recorded=true;
+  const res=ck?(turn=='b'?'w':'l'):'d';
+  if(window.ArcadeTrophies){
+    try{
+      const hasQueen=b.some(row=>row.some(sq=>sq==='wQ'));
+      const moves=Math.max(1,Math.ceil(hist.length/2));
+      ArcadeTrophies.emit('gameover',{
+        winner:res==='w'?'me':res==='l'?'opp':'draw',
+        moves:moves,
+        opponent:(opp&&ai)?opp.id:null,
+        streak:(prof&&prof.streak)||0,
+        lostQueen:!hasQueen
+      },{game:'chess',mode:gmode});
+
+      if(ck&&res==='w'){
+        const lastMv=hist[hist.length-1];
+        const byPiece=lastMv&&lastMv.piece?lastMv.piece[1].toLowerCase():'q';
+        const isBackRank=lastMv&&(byPiece==='r'||byPiece==='q')&&lastMv.mv[2]===0;
+        ArcadeTrophies.emit('checkmate',{
+          winner:'me',
+          pattern:isBackRank?'back-rank':'standard',
+          byPiece:byPiece
+        },{game:'chess',mode:gmode});
+      }
+    }catch(e){}
+  }
+  if(gmode!='ladder')return;
+  const cnt=(t,f)=>f?hist.filter(h=>h.t==t&&h.cap).length:0;let left=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(b[r][c]&&b[r][c][0]=='w')left++;
+  const rec={id:opp.id,res,mate:!!ck,plies:hist.length,ms:Date.now()-t0g-pausedMs,caps:cnt('w',1),left,undos:3-undosLeft,san:hist.map(h=>h.san).join(' '),date:Date.now()};
+  const out=recordResult(prof,rec);saveProfile(store,prof);lastOut={out,res};submitScore(rec,out)}
 function aiMove(){if(over||an||sa||turn!='b'||!inGame)return;if(paused){aiWait=1;return}
 const id=++reqId,g=gid,t0=performance.now();
 const done=m=>{if(id!==reqId||g!==gid||!inGame||over||turn!='b'||!m)return;
@@ -1030,7 +1059,13 @@ function showPromo(){const row=$('pr');row.innerHTML='';
 for(const t of 'QRBN'){const bt=document.createElement('button');bt.className='pc';bt.setAttribute('aria-label',{Q:'Queen',R:'Rook',B:'Bishop',N:'Knight'}[t]);
 const cn=document.createElement('canvas');cn.width=cn.height=18;cn.style.width=cn.style.height='54px';
 blit(cn.getContext('2d'),turn+t,2,18-SPR[t].length);bt.appendChild(cn);
-bt.onclick=()=>{const m=pend;pend=null;scr('s-promo',0);if(m)play(m.r,m.c,m.y,m.x,t)};row.appendChild(bt)}
+bt.onclick=()=>{const m=pend;pend=null;scr('s-promo',0);
+if(m){
+  if(turn=='w'&&window.ArcadeTrophies){
+    try{ArcadeTrophies.emit('promotion',{by:'me',toPiece:t.toLowerCase()},{game:'chess'});}catch(e){}
+  }
+  play(m.r,m.c,m.y,m.x,t);
+}};row.appendChild(bt)}
 scr('s-promo',1)}
 function showOver(mate,flag){try{ArcadeShell.clear('chess')}catch(e){}const w=turn=='w'?'b':'w';$('ot').textContent=flag?'TIME!':mate?'CHECKMATE':'STALEMATE';
 $('os').textContent=(mate||flag)?(w=='w'?(ai?'YOU WIN!':'WHITE WINS!'):(ai?'CPU WINS!':'BLACK WINS!')):'IT IS A DRAW';

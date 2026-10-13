@@ -76,7 +76,7 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
     <div class="plist" id="players"></div>
     <div id="status" role="status" aria-live="polite">LOADING 3D...</div>
     <div class="controls">
-      <button class="btn" id="again">NEW GAME</button>
+      <button class="btn" id="again">▶ PLAY</button>
       <button class="btn" id="view">FLIP VIEW</button>
       <span class="sh-mount" id="shMount"></span>
     </div>
@@ -100,6 +100,8 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
 <script src="../shared/vendor/three.min.js"></script>
 <script src="../shared/shared.js"></script>
 <script src="../shared/shell.js"></script>
+<script src="../shared/trophies-data.js"></script>
+<script src="../shared/trophies.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
@@ -347,6 +349,9 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
     }
     await sleep(280); if (g !== gid) return;
     if (cap) {
+      if (p === 0 && window.ArcadeTrophies) {
+        try { ArcadeTrophies.emit('capture', { by: 'me', count: cap }, { game: 'ayo', mode: mode }); } catch(e){}
+      }
       capShow = list; beep(560, .18);
       list.forEach(pi => { pits[pi].slice().forEach((sd, k) => { pits[pi].splice(pits[pi].indexOf(sd), 1); setTimeout(() => { if (g === gid) { fly(sd, "store", p, 480, 2.4); refresh(); } }, 450 + k * 70); }); });
       await sleep(450 + 70 * 4 + 600); if (g !== gid) return;
@@ -376,10 +381,20 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
     const w = st.winner, nm = names(); let text;
     if (w === -1) text = "DRAW " + st.s[0] + "-" + st.s[1];
     else if (mode === "cpu") {
-      if (w === 0) { wins++; awardResult(true); text = "YOU WIN " + st.s[0] + "-" + st.s[1] + "! +" + Shared.XP.win + " XP"; }
+      if (w === 0) {
+        wins++; awardResult(true); text = "YOU WIN " + st.s[0] + "-" + st.s[1] + "! +" + Shared.XP.win + " XP";
+        if (window.ArcadeTrophies) {
+          try { ArcadeTrophies.emit('gameover', { winner: 'me', seeds: st.s[0] }, { game: 'ayo', mode: mode }); } catch(e){}
+        }
+      }
       else if (w === 1) { losses++; awardResult(false); text = "CPU WINS " + st.s[1] + "-" + st.s[0]; }
       $("#score").textContent = "W" + wins + " L" + losses;
-    } else text = nm[w] + " WINS " + st.s[w] + "-" + st.s[1 - w] + "!";
+    } else {
+      text = nm[w] + " WINS " + st.s[w] + "-" + st.s[1 - w] + "!";
+      if (w === 0 && window.ArcadeTrophies) {
+        try { ArcadeTrophies.emit('gameover', { winner: 'me', seeds: st.s[0] }, { game: 'ayo', mode: mode }); } catch(e){}
+      }
+    }
     statusEl.textContent = text; beep(660, .3);
     const d = document.createElement("div"); d.textContent = text; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
   }

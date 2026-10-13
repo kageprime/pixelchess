@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Arcade: Trophy Room & Achievements</title>
+<meta name="description" content="View unlocked trophies, badges, milestones and cosmetic achievements across all Pixel Arcade games.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="shared/arcade.css">
+<script src="shared/vendor/tailwind.min.js"></script>
+<style>
+@font-face{font-family:'Press Start 2P';font-style:normal;font-weight:400;font-display:swap;src:url('shared/vendor/PressStart2P-Regular.woff2') format('woff2')}
+.font-pixel{font-family:'Press Start 2P',ui-monospace,monospace}
+.trophy-card{transition:all 0.15s ease}
+.trophy-card:hover{transform:translateY(-2px)}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-pixel antialiased p-4 min-h-screen flex flex-col items-center justify-start select-none">
+
+<!-- TOP APP BAR -->
+<header class="w-full max-w-5xl bg-slate-800/90 backdrop-blur border-2 border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4 mb-6 shadow-lg">
+  <div class="flex items-center gap-3">
+    <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <div id="ci" title="Back to Store" class="w-8 h-8 bg-amber-400 text-slate-950 flex items-center justify-center font-black rounded shadow text-[9px] leading-none">PA</div>
+      <div>
+        <div class="text-xs text-amber-400 font-bold">PIXEL ARCADE</div>
+        <div class="text-[7px] text-slate-400">◄ STORE HOME</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="flex items-center gap-2 text-[8px]">
+    <div id="user-badge" class="bg-slate-950/80 border border-slate-700 px-3 py-2 rounded text-slate-300">
+      <span id="cr" class="text-amber-300 font-bold">ROOKIE</span> · <span id="cx" class="text-emerald-400">XP 0</span>
+    </div>
+    <a href="index.html" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-slate-200">STORE</a>
+    <button id="snd" type="button" aria-pressed="true" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-slate-200">SOUND: ON</button>
+  </div>
+</header>
+
+<main class="w-full max-w-5xl space-y-6">
+
+  <!-- TROPHY SHOWCASE HERO -->
+  <div class="bg-gradient-to-r from-amber-950/60 via-slate-900 to-indigo-950/60 border-2 border-amber-500/40 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="space-y-3 max-w-lg">
+      <div class="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[8px] px-2.5 py-1 rounded">
+        ★ CONSOLE-STYLE TROPHY ROOM
+      </div>
+      <h1 class="text-2xl text-white font-bold tracking-wider">TROPHIES &amp; AWARDS</h1>
+      <p class="text-[9px] text-slate-300 leading-relaxed">
+        Earn declarative trophies across offline modes and online quick matches. Every trophy awards direct XP toward your arcade profile rank.
+      </p>
+
+      <!-- PROGRESS BAR -->
+      <div class="space-y-1.5 pt-2">
+        <div class="flex justify-between text-[8px]">
+          <span class="text-slate-400">OVERALL PROGRESS</span>
+          <span id="trophy-pct" class="text-amber-400 font-bold">0% (0 / 0)</span>
+        </div>
+        <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-700">
+          <div id="trophy-bar" class="bg-gradient-to-r from-amber-500 to-yellow-300 h-full w-0 transition-all duration-500"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDALS SHELF -->
+    <div class="bg-black/50 border border-slate-700 p-4 rounded-xl flex gap-4 text-center shrink-0">
+      <div class="space-y-1">
+        <div class="text-xl">🏆</div>
+        <div class="text-[7px] text-cyan-400">PLATINUM</div>
+        <div id="cnt-platinum" class="text-xs font-bold text-white">0</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-xl">🥇</div>
+        <div class="text-[7px] text-yellow-400">GOLD</div>
+        <div id="cnt-gold" class="text-xs font-bold text-white">0</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-xl">🥈</div>
+        <div class="text-[7px] text-slate-300">SILVER</div>
+        <div id="cnt-silver" class="text-xs font-bold text-white">0</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-xl">🥉</div>
+        <div class="text-[7px] text-amber-600">BRONZE</div>
+        <div id="cnt-bronze" class="text-xs font-bold text-white">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS & TABS -->
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <!-- GAME TABS -->
+      <div id="game-tabs" class="flex flex-wrap gap-1.5 text-[8px]" role="tablist">
+        <button type="button" data-game="all" class="bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded">ALL GAMES</button>
+        <button type="button" data-game="chess" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">CHESS</button>
+        <button type="button" data-game="pool" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">POOL</button>
+        <button type="button" data-game="connect4" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">CONNECT 4</button>
+        <button type="button" data-game="ayo" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">AYO</button>
+        <button type="button" data-game="scrabble" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">SCRABBLE</button>
+        <button type="button" data-game="arcade" class="bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded">ARCADE</button>
+      </div>
+
+      <!-- STATUS FILTER -->
+      <div class="flex items-center gap-1.5 text-[8px]">
+        <span class="text-slate-500">SHOW:</span>
+        <button type="button" id="filter-all" class="text-amber-400 underline font-bold px-1.5 py-1">ALL</button>
+        <button type="button" id="filter-unlocked" class="text-slate-400 hover:text-white px-1.5 py-1">UNLOCKED</button>
+        <button type="button" id="filter-locked" class="text-slate-400 hover:text-white px-1.5 py-1">LOCKED</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TROPHY CARDS GRID -->
+  <div id="trophy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" aria-label="Trophy list">
+    <!-- Injected dynamically -->
+  </div>
+
+</main>
+
+<footer class="w-full max-w-5xl flex flex-wrap gap-2 items-center justify-center mt-10 mb-6 text-[8px] text-slate-500">
+  <span>PIXEL ARCADE TROPHY SYSTEM V1.0</span>
+  <span aria-hidden="true">·</span>
+  <span>HONEST LABELS &middot; NO MICROTRANSACTIONS</span>
+  <span aria-hidden="true">·</span>
+  <span>BY KAGEPRIME</span>
+</footer>
+
+<script src="shared/shared.js"></script>
+<script src="shared/trophies-data.js"></script>
+<script src="shared/trophies.js"></script>
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
+  const S = window.Shared;
+  const T = window.ArcadeTrophies;
+
+  let activeGame = 'all';
+  let activeStatus = 'all'; // 'all', 'unlocked', 'locked'
+
+  const TIER_ICONS = {
+    bronze: '🥉',
+    silver: '🥈',
+    gold: '🥇',
+    platinum: '🏆'
+  };
+
+  const TIER_COLORS = {
+    bronze: 'border-amber-700/60 text-amber-500',
+    silver: 'border-slate-500 text-slate-300',
+    gold: 'border-yellow-500 text-yellow-300',
+    platinum: 'border-cyan-400 text-cyan-300'
+  };
+
+  function renderProfile() {
+    if (!S) return;
+    const p = S.profile();
+    $('cr').textContent = p.rank.title;
+    $('cx').textContent = 'XP ' + p.xp;
+    const on = S.sound.get();
+    $('snd').textContent = 'SOUND: ' + (on ? 'ON' : 'OFF');
+    $('snd').setAttribute('aria-pressed', on);
+  }
+
+  function renderSummary() {
+    const summary = T.getSummary();
+    $('cnt-platinum').textContent = summary.counts.platinum;
+    $('cnt-gold').textContent = summary.counts.gold;
+    $('cnt-silver').textContent = summary.counts.silver;
+    $('cnt-bronze').textContent = summary.counts.bronze;
+    $('trophy-pct').textContent = `${summary.percentage}% (${summary.totalUnlocked} / ${summary.totalAvailable})`;
+    $('trophy-bar').style.width = summary.percentage + '%';
+  }
+
+  function renderGrid() {
+    const grid = $('trophy-grid');
+    grid.innerHTML = '';
+
+    const defs = T.list(activeGame);
+    const store = T.getSummary().unlocked;
+
+    const filtered = defs.filter(t => {
+      const isUnl = !!store[t.id];
+      if (activeStatus === 'unlocked') return isUnl;
+      if (activeStatus === 'locked') return !isUnl;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full py-12 text-center text-slate-500 text-[9px]">
+          NO TROPHIES FOUND MATCHING THIS FILTER.
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(trophy => {
+      const unl = store[trophy.id];
+      const isUnl = !!unl;
+      const isHidden = trophy.hidden && !isUnl;
+
+      const card = document.createElement('div');
+      card.className = `trophy-card rounded-xl p-4 border flex flex-col justify-between ${
+        isUnl ? 'bg-slate-800/80 border-slate-700 shadow-md' : 'bg-slate-900/60 border-slate-800/80 opacity-60'
+      }`;
+
+      const tierColor = TIER_COLORS[trophy.tier] || 'border-slate-700 text-slate-300';
+      const tierIcon = TIER_ICONS[trophy.tier] || '🏆';
+
+      const dateStr = isUnl && unl.t ? new Date(unl.t).toLocaleDateString() : '';
+
+      card.innerHTML = `
+        <div>
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${isHidden ? '🔒' : tierIcon}</span>
+              <div>
+                <span class="text-[7px] uppercase font-bold px-1.5 py-0.5 rounded border ${tierColor}">
+                  ${trophy.tier}
+                </span>
+                <span class="text-[7px] text-slate-500 uppercase ml-1">${trophy.game}</span>
+              </div>
+            </div>
+            <span class="text-[7px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-1.5 py-0.5 rounded">
+              +${trophy.xp} XP
+            </span>
+          </div>
+
+          <h3 class="text-xs font-bold ${isUnl ? 'text-white' : 'text-slate-400'} mb-1">
+            ${isHidden ? '??? HIDDEN TROPHY' : trophy.name}
+          </h3>
+          <p class="text-[8px] text-slate-400 leading-relaxed mb-4">
+            ${isHidden ? 'Fulfill a secret condition in the game to reveal this award.' : trophy.desc}
+          </p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-[7px]">
+          <div>
+            ${isUnl ? `<span class="text-emerald-400 font-bold">✓ UNLOCKED ${dateStr}</span>` : `<span class="text-slate-500">LOCKED</span>`}
+          </div>
+          ${trophy.game !== 'arcade' ? `
+            <a href="store.html?game=${trophy.game}" class="text-amber-400 hover:underline">
+              GAME PAGE ↗
+            </a>
+          ` : ''}
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // Tab listeners
+  $('game-tabs').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('game-tabs').querySelectorAll('button').forEach(b => {
+        b.className = 'bg-slate-800 text-slate-300 hover:bg-slate-700 px-3 py-1.5 rounded';
+      });
+      btn.className = 'bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded';
+      activeGame = btn.dataset.game;
+      renderGrid();
+    });
+  });
+
+  // Status filter buttons
+  const fAll = $('filter-all'), fUnl = $('filter-unlocked'), fLck = $('filter-locked');
+  function setStatus(st) {
+    activeStatus = st;
+    [fAll, fUnl, fLck].forEach(b => {
+      b.className = 'text-slate-400 hover:text-white px-1.5 py-1';
+    });
+    if (st === 'all') fAll.className = 'text-amber-400 underline font-bold px-1.5 py-1';
+    if (st === 'unlocked') fUnl.className = 'text-amber-400 underline font-bold px-1.5 py-1';
+    if (st === 'locked') fLck.className = 'text-amber-400 underline font-bold px-1.5 py-1';
+    renderGrid();
+  }
+  fAll.onclick = () => setStatus('all');
+  fUnl.onclick = () => setStatus('unlocked');
+  fLck.onclick = () => setStatus('locked');
+
+  $('snd').addEventListener('click', () => {
+    S.sound.toggle();
+    renderProfile();
+  });
+
+  renderProfile();
+  renderSummary();
+  renderGrid();
+
+  window.addEventListener('arcade:trophies', () => {
+    renderSummary();
+    renderGrid();
+  });
+})();
+</script>
+</body>
+</html>
