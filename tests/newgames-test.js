@@ -28,6 +28,9 @@ const server = http.createServer((req, res) => {
     ok(g + ' uses the hub XP amounts, not its own numbers', html.includes('Shared.XP.win') && html.includes('Shared.XP.loss'));
     ok(g + ' has no private PixelArcade award path left', !html.includes('PixelArcade'));
     ok(g + ' links back to the lobby', html.includes('href="../index.html"'));
+    ok(g + ' loads the shell module and styles', html.includes('<script src="../shared/shell.js"></script>') && html.includes('<link rel="stylesheet" href="../shared/shell.css">'));
+    ok(g + ' mounts the arcade menu button', html.includes('id="shMount"'));
+    ok(g + ' snapshots through ArcadeShell', html.includes("ArcadeShell.save('" + g + "'") && html.includes("ArcadeShell.load('" + g + "'"));
   }
 
   // ---- connect4 plays: pure DOM, fully drivable ----

@@ -8,6 +8,7 @@
 <title>Ludo 3D | Pixel Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="../shared/shell.css">
 <style>
 :root{
   --bg:#1b1230; --panel:#2a1c4a; --edge:#0f0a1d; --text:#f3ecff; --dim:#9d8cc4;
@@ -86,6 +87,7 @@ body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-heig
       <button class="die" id="die" aria-label="Roll the die"><canvas id="dc"></canvas></button>
       <button class="btn" id="view">VIEW</button>
       <button class="btn" id="again">NEW GAME</button>
+      <span class="sh-mount" id="shMount"></span>
     </div>
     <div class="log" id="log" aria-label="Move list"></div>
     <div class="bar">
@@ -106,6 +108,7 @@ body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-heig
 <!-- Vendored under /shared/vendor/three.min.js (MIT) so the game works offline. -->
 <script src="../shared/vendor/three.min.js"></script>
 <script src="../shared/shared.js"></script>
+<script src="../shared/shell.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
@@ -452,6 +455,7 @@ body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-heig
   }
   function win(p){
     phase = "over"; beep(660, .3); logLine(p, "wins!");
+    try{ArcadeShell.clear('ludo')}catch(e){}
     if (mode === "cpu") { if (p === 0) { wins++; awardResult(true); } else { losses++; awardResult(false); }
       $("#score").textContent = "W" + wins + " L" + losses; }
     setStatus(p === 0 && mode === "cpu" ? "YOU WIN! +" + Shared.XP.win + " XP" : label(p) + " WINS!");
@@ -473,7 +477,7 @@ body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-heig
   function group(sel, fn){
     document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => {
       document.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
-      fn(b.dataset.v); reset();
+      fn(b.dataset.v); try{ArcadeShell.clear('ludo')}catch(e){} reset();
     }));
   }
   group("#np", x => np = +x);
@@ -493,6 +497,53 @@ body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-heig
     renderer.render(scene, camera); dieR.render(dscene, dcam);
     requestAnimationFrame(frame);
   }
+  /* ---- arcade shell: sidebar + snapshots (game: ludo) ---- */
+  function shSnapshot(){
+    if(!act||(phase!=="roll"&&phase!=="pick"))return null;
+    try{
+      if(!pos.every(function(q){return Array.isArray(q)&&q.length===4&&q.every(function(x){return Number.isInteger(x)&&x>=-1&&x<=56})}))return null;
+      return{v:1,np:np,mode:mode,act:act.slice(),ti:ti,pos:pos.map(function(q){return q.slice()})};
+    }catch(e){return null}
+  }
+  function shSegSync(){
+    document.querySelectorAll("#np button").forEach(function(x){x.setAttribute("aria-pressed",+x.dataset.v===np)});
+    document.querySelectorAll("#md button").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.v===mode)});
+  }
+  function shRestore(){
+    var rec=null;try{rec=ArcadeShell.load('ludo')}catch(e){}
+    var s=rec&&rec.state;if(!s||s.v!==1)return false;
+    try{
+      if([2,3,4].indexOf(s.np)<0)return false;
+      if(s.mode!=="cpu"&&s.mode!=="pass")return false;
+      if(!Array.isArray(s.act)||!Array.isArray(s.pos)||s.pos.length!==4)return false;
+      if(!s.pos.every(function(q){return Array.isArray(q)&&q.length===4&&q.every(function(x){return Number.isInteger(x)&&x>=-1&&x<=56})}))return false;
+      np=s.np;mode=s.mode;shSegSync();
+      var g=++gid;
+      act={2:[0,2],3:[0,1,2],4:[0,1,2,3]}[np];
+      pos=[0,1,2,3].map(function(){return[-1,-1,-1,-1]});
+      s.act.forEach(function(p,i){if(act.indexOf(p)>=0&&s.pos[i])pos[p]=s.pos[i].slice()});
+      ti=act.indexOf(s.ti)>=0?s.ti:act[0];
+      sixes=0;vi=0;phase="busy";rollRes=pickRes=null;azT=AZ[act.indexOf(ti)]||AZ[0];logEl.innerHTML="";
+      allTok.forEach(function(T){T.mv=false;T.anim=null;T.g.visible=T.sh.visible=act.indexOf(T.p)>=0});
+      baseMats.forEach(function(m,p){m.color.setHex(COL[p]).multiplyScalar(act.indexOf(p)>=0?1:.3)});
+      var R=rests();
+      act.forEach(function(p){tokens[p].forEach(function(T){var r=R[p*4+T.t];T.x=r.x;T.z=r.z;T.s=r.s})});
+      run(g);return true;
+    }catch(e){return false}
+  }
+  try{
+    ArcadeShell.init({game:'ludo',title:'LUDO 3D',mount:'#shMount',sound:false,
+      who:function(){return 'W'+wins+' L'+losses},
+      canResume:function(){try{return ArcadeShell.has('ludo')&&(phase==="over"||(pos.every(function(q){return q.every(function(x){return x===-1})})&&ti===0))}catch(e){return false}},
+      onResume:function(){shRestore()},
+      canRestart:function(){return true},
+      onRestart:function(){$("#again").click()},
+      onQuit:function(){var r=shSnapshot();if(r)ArcadeShell.save('ludo',r);}});
+    document.querySelector('#again').addEventListener('click',function(){try{ArcadeShell.clear('ludo')}catch(e){}});
+    ArcadeShell.autosave('ludo',function(){return shSnapshot()});
+    document.querySelector('a[href="../index.html"]').addEventListener('click',function(){var r=shSnapshot();if(r)ArcadeShell.save('ludo',r);});
+  }catch(e){}
+
   resize(); reset(); requestAnimationFrame(frame);
 })();
 </script>

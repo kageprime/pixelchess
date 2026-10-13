@@ -1,0 +1,101 @@
+/* Pixel Arcade shell: one cross-game chrome (sidebar drawer, start screens, snapshots).
+   Namespaced .sh-* so it never collides with per-game CSS. Self-contained palette
+   (dark arcade) with var() overrides so pages can re-theme it if they want. */
+.sh-root, .sh-root::before, .sh-root::after { box-sizing: border-box; }
+
+/* floating menu button injected by shell.js (explicit .sh-mount children take precedence) */
+.sh-fab {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 10px; z-index: 60;
+  width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0;
+  font-family: 'Press Start 2P', ui-monospace, monospace; font-size: 14px; line-height: 1;
+  color: var(--sh-fg, #f5e9c8); background: var(--sh-panel, #2e2250);
+  border: 0; cursor: pointer; opacity: .85;
+  box-shadow: 0 -3px 0 0 var(--sh-edge, #0b0616), 0 3px 0 0 var(--sh-edge, #0b0616),
+    -3px 0 0 0 var(--sh-edge, #0b0616), 3px 0 0 0 var(--sh-edge, #0b0616);
+}
+.sh-fab:hover { opacity: 1; }
+.sh-fab:focus-visible { outline: 3px solid var(--sh-accent, #ffd23f); outline-offset: 2px; opacity: 1; }
+.sh-mount{display:inline-block}
+.sh-mount .sh-fab { position: static; width: 44px; height: 44px; opacity: 1; }
+
+/* scrim + drawer */
+.sh-scrim {
+  position: fixed; inset: 0; z-index: 70; background: rgba(5, 2, 12, .6);
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.sh-scrim.on { opacity: 1; pointer-events: auto; }
+.sh-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 71;
+  width: min(86vw, 320px); overflow-y: auto;
+  background: var(--sh-bg, #1b1230); color: var(--sh-fg, #f5e9c8);
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  border-left: 4px solid var(--sh-edge, #0b0616);
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 14px calc(env(safe-area-inset-bottom, 0px) + 14px);
+  transform: translateX(102%); transition: transform .22s ease-out;
+}
+.sh-drawer.on { transform: none; }
+.sh-drawer h2 { font-size: 13px; margin: 0 0 2px; color: var(--sh-accent, #ffd23f); text-shadow: 2px 2px 0 var(--sh-edge, #0b0616); }
+.sh-sub { font-size: 7px; line-height: 1.8; opacity: .75; margin: 0 0 14px; }
+.sh-who { font-size: 8px; margin: 0 0 14px; padding: 8px; background: rgba(255, 255, 255, .05); }
+.sh-who b { color: var(--sh-accent, #ffd23f); font-weight: 400; }
+.sh-drawer .sh-btn {
+  display: block; width: 100%; margin: 0 0 10px; padding: 13px 10px; min-height: 44px;
+  font: inherit; font-size: 10px; text-align: left; cursor: pointer; text-decoration: none;
+  color: var(--sh-fg, #f5e9c8); background: var(--sh-panel, #2e2250); border: 0;
+  box-shadow: 0 -3px 0 0 var(--sh-edge, #0b0616), 0 3px 0 0 var(--sh-edge, #0b0616),
+    -3px 0 0 0 var(--sh-edge, #0b0616), 3px 0 0 0 var(--sh-edge, #0b0616);
+}
+.sh-drawer a.sh-btn { box-sizing: border-box; }
+.sh-drawer .sh-btn.primary { background: var(--sh-accent, #ffd23f); color: #1b1230; }
+.sh-drawer .sh-btn:disabled { opacity: .4; cursor: default; }
+.sh-drawer .sh-btn:not(:disabled):active { transform: translateY(2px); }
+.sh-drawer .sh-btn:focus-visible { outline: 3px solid var(--sh-accent, #ffd23f); outline-offset: 2px; }
+.sh-drawer .sh-btn[hidden] { display: none; }
+/* shell-driven CONTINUE buttons must stay hidden despite game button styles */
+#bContinue[hidden], #shResume[hidden] { display: none; }
+.sh-foot { font-size: 7px; line-height: 2; opacity: .6; margin: 14px 0 0; text-align: center; }
+
+/* shared start screen: hero art, one primary CTA, mode cards, secondary row */
+.sh-ss { text-align: center; padding: 18px 14px 22px; max-width: 460px; margin: 0 auto; }
+.sh-ss .sh-art { margin: 2px auto 10px; display: block; }
+.sh-ss h1.sh-title { font-size: clamp(22px, 8vw, 34px); line-height: 1.25; margin: 0 0 6px;
+  color: var(--sh-fg, #f5e9c8); text-shadow: 3px 3px 0 var(--sh-accent, #ffd23f), 6px 6px 0 var(--sh-edge, #0b0616); }
+.sh-ss h1.sh-title span { color: var(--sh-accent, #ffd23f); text-shadow: 3px 3px 0 var(--sh-edge, #0b0616); }
+.sh-ss .sh-tag { font-size: 8px; line-height: 2; opacity: .85; margin: 0 0 12px; }
+.sh-ss .sh-play {
+  display: block; width: min(74vw, 290px); margin: 6px auto; padding: 16px 8px; min-height: 52px;
+  font: inherit; font-size: 12px; cursor: pointer;
+  color: #1b1230; background: var(--sh-accent, #ffd23f); border: 0;
+  box-shadow: 0 -4px 0 0 var(--sh-edge, #0b0616), 0 4px 0 0 var(--sh-edge, #0b0616),
+    -4px 0 0 0 var(--sh-edge, #0b0616), 4px 0 0 0 var(--sh-edge, #0b0616), inset 0 -4px 0 0 rgba(0, 0, 0, .22);
+}
+.sh-ss .sh-play small { display: block; font-size: 7px; margin-top: 6px; opacity: .75; }
+.sh-ss .sh-play:active { transform: translateY(3px); }
+.sh-ss .sh-play:focus-visible { outline: 3px solid var(--sh-fg, #f5e9c8); outline-offset: 3px; }
+.sh-modes { display: grid; gap: 8px; margin: 12px 0 4px; }
+.sh-modes.two { grid-template-columns: 1fr 1fr; }
+.sh-mode {
+  font: inherit; font-size: 9px; line-height: 1.7; padding: 12px 8px; min-height: 52px; cursor: pointer;
+  color: var(--sh-fg, #f5e9c8); background: var(--sh-panel, #2e2250); border: 0;
+  box-shadow: 0 -3px 0 0 var(--sh-edge, #0b0616), 0 3px 0 0 var(--sh-edge, #0b0616),
+    -3px 0 0 0 var(--sh-edge, #0b0616), 3px 0 0 0 var(--sh-edge, #0b0616);
+}
+.sh-mode small { display: block; font-size: 7px; opacity: .7; }
+.sh-mode[aria-pressed="true"] { background: var(--sh-accent, #ffd23f); color: #1b1230; }
+.sh-mode[aria-pressed="true"] small { opacity: .8; }
+.sh-mode:focus-visible { outline: 3px solid var(--sh-accent, #ffd23f); outline-offset: 2px; }
+.sh-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin-top: 10px; }
+.sh-row .sh-btn {
+  font: inherit; font-size: 8px; padding: 10px 8px; min-height: 44px; margin: 6px 4px; cursor: pointer;
+  color: var(--sh-fg, #f5e9c8); background: transparent;
+  border: 2px solid var(--sh-edge, #0b0616);
+}
+.sh-row .sh-btn:focus-visible { outline: 3px solid var(--sh-accent, #ffd23f); outline-offset: 2px; }
+.sh-hint { font-size: 7px; line-height: 2; opacity: .7; margin: 12px 0 0; }
+.sh-seg { display: inline-flex; border: 3px solid var(--sh-edge, #0b0616); background: var(--sh-panel, #2e2250); margin: 10px 4px 0; }
+.sh-seg button { font: inherit; font-size: 8px; color: var(--sh-fg, #f5e9c8); opacity: .7; background: none; border: 0; padding: 9px 10px; min-height: 40px; cursor: pointer; }
+.sh-seg button[aria-pressed="true"] { background: var(--sh-accent, #ffd23f); color: #1b1230; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sh-scrim, .sh-drawer { transition: none; }
+}

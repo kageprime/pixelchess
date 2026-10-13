@@ -6,6 +6,7 @@
 <title>Pixel Scrabble</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231f7a5c'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3e3b0'/%3E%3Ctext x='8' y='12' font-family='Georgia,serif' font-size='10' font-weight='bold' text-anchor='middle' fill='%232b2118'%3EW%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="../shared/arcade.css">
+<link rel="stylesheet" href="../shared/shell.css">
 <style>
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{text-align:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -72,6 +73,7 @@ label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
  <h1 class="logo">PIXEL<br><span>SCRABBLE</span></h1>
  <p class="sub">WORD TILES FOR TWO PLAYERS</p>
  <button class="big" id="bStart" type="button">2 PLAYERS</button>
+ <button class="big" id="bContinue" type="button" hidden>CONTINUE SAVED GAME</button>
  <div>
   <button class="sm" id="bHow" type="button">HOW TO PLAY</button>
   <button class="sm tsnd" type="button">SOUND: ON</button>
@@ -94,7 +96,7 @@ label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
 </section>
 <main id="g" aria-label="Game board">
  <div id="side">
-  <div class="top"><button type="button" id="bMenu">MENU</button><span class="ttl">SCRABBLE</span><button type="button" class="tsnd">SOUND: ON</button></div>
+  <div class="top"><button type="button" id="bMenu">MENU</button><span class="sh-mount" id="shMount"></span><span class="ttl">SCRABBLE</span><button type="button" class="tsnd">SOUND: ON</button></div>
   <div class="hud"><div class="pl px" id="pl0"><span class="nm">P1</span><b>0</b></div><div class="pl px" id="pl1"><span class="nm">P2</span><b>0</b></div><div class="pl px bag"><span>BAG</span><b id="bagn">86</b></div></div>
   <div id="msg" role="status" aria-live="polite"></div>
   <div id="rk" aria-label="Your rack"></div>
@@ -118,6 +120,7 @@ label.lnk:focus-within{outline:4px solid var(--accent);outline-offset:6px}
  </div>
 </section>
 <script src="../shared/shared.js"></script>
+<script src="../shared/shell.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),Q=s=>document.querySelectorAll(s);
@@ -144,6 +147,7 @@ function sfx(kind){
 
 /* ---- game state ---- */
 function newGame(){
+  try{ArcadeShell.clear('scrabble')}catch(e){}
   B=Array.from({length:15},()=>Array(15).fill(null));bag=[];
   for(const[,l,n]of'A9B2C2D4E12F2G3H2I9J1K1L4M2N6O8P2Q1R6S4T6U4V2W2X1Y2Z1'.matchAll(/([A-Z])(\d+)/g))for(let i=0;i<+n;i++)bag.push({l,b:0});
   bag.push({l:'?',b:1},{l:'?',b:1});shuf(bag);
@@ -156,6 +160,7 @@ function show(id){
   const full=id==='s-title'||id==='s-how';
   ['s-title','s-how','s-hand','s-pick','s-over'].forEach(s=>$(s).classList.toggle('on',s===id));
   $('g').classList.toggle('on',!full);if(!full)fit();
+  try{if(id==='s-title'){var bc=$('bContinue');if(bc)bc.hidden=!ArcadeShell.has('scrabble')}}catch(e){}
 }
 const close=id=>$(id).classList.remove('on');
 function msg(t,e){$('msg').textContent=t||'';$('msg').className=e?'er':''}
@@ -212,7 +217,8 @@ function check(){
 function next(){cur=1-cur;sel=null;hid=1;clearSay();$('ht').textContent='PLAYER '+(cur+1);show('s-hand');render()}
 function recall(){B.forEach((row,r)=>row.forEach((t,c)=>{if(t&&!t.f){P[cur].r.push({l:t.b?'?':t.l,b:t.b});B[r][c]=null}}));sel=null}
 function finish(out){
-  over=1;P.forEach((p,i)=>{const s=p.r.reduce((a,t)=>a+tv(t),0);p.s-=s;if(out>=0&&i!=out)P[out].s+=s});
+  over=1;try{ArcadeShell.clear('scrabble')}catch(e){}
+  P.forEach((p,i)=>{const s=p.r.reduce((a,t)=>a+tv(t),0);p.s-=s;if(out>=0&&i!=out)P[out].s+=s});
   try{if(window.Shared){Shared.recordGame('scrabble',out>=0);Shared.addXP('scrabble',out>=0?Shared.XP.win:Shared.XP.loss)}}catch(e){}
   const[a,b]=P.map(p=>p.s);
   $('ot').textContent=a==b?'A DRAW':`PLAYER ${a>b?1:2} WINS`;
@@ -233,7 +239,8 @@ $('bReveal').onclick=()=>{hid=0;close('s-hand');render();fit()};
 /* ---- menus, word list, layout ---- */
 $('bStart').onclick=newGame;$('bAgain').onclick=newGame;
 $('bHow').onclick=()=>show('s-how');$('bHowOk').onclick=()=>show('s-title');
-const toMenu=()=>show('s-title');$('bMenu').onclick=toMenu;$('bMenu2').onclick=toMenu;
+function shMenuSave(){try{var r=shSnapshot();if(r)ArcadeShell.save('scrabble',r);else ArcadeShell.clear('scrabble')}catch(e){}}
+const toMenu=()=>{shMenuSave();show('s-title')};$('bMenu').onclick=toMenu;$('bMenu2').onclick=toMenu;
 function dcText(){$('dc').textContent=dict?`WORD LIST LOADED: ${dict.size.toLocaleString()} WORDS. EVERY WORD IS CHECKED.`:'NO WORD LIST: WORDS ARE ON THE HONOUR SYSTEM.'}
 $('wl').onchange=async e=>{const f=e.target.files[0];if(!f)return;const t=await f.text();dict=new Set(t.toUpperCase().split(/[\s,]+/).filter(w=>w.length>1));dcText()};
 const snd=()=>{const on=window.Shared?Shared.sound.get():true;Q('.tsnd').forEach(b=>b.textContent='SOUND: '+(on?'ON':'OFF'))};
@@ -246,6 +253,60 @@ function fit(){
   const s=Math.max(15,Math.min(40,Math.floor(Math.min((aw-14)/15,(ah-14)/15))));
   g.style.setProperty('--s',s+'px');
 }
+/* ---- arcade shell: sidebar + snapshots (game: scrabble) ---- */
+function shTile(t){return{l:t.l,b:t.b?1:0}}
+function shLive(){
+  if(over)return false;
+  try{
+    if(passes>0||P[0].s!==0||P[1].s!==0)return true;
+    return B.some(function(row){return row.some(function(t){return t&&t.f})});
+  }catch(e){return false}
+}
+function shSnapshot(){
+  if(!shLive())return null;
+  try{
+    return{v:1,cur:cur,passes:passes,last:last,
+      B:B.map(function(row){return row.map(function(t){return t?{l:t.l,b:t.b?1:0,f:t.f?1:0}:null})}),
+      bag:bag.map(shTile),
+      P:P.map(function(p){return{s:p.s,r:p.r.map(shTile)}})};
+  }catch(e){return null}
+}
+function shValidTile(t){return t&&typeof t.l==='string'&&(t.l==='?'||/^[A-Z]$/.test(t.l))&&(t.b===0||t.b===1)}
+function shRestore(){
+  var rec=null;try{rec=ArcadeShell.load('scrabble')}catch(e){}
+  var s=rec&&rec.state;if(!s||s.v!==1)return false;
+  try{
+    if(!Array.isArray(s.B)||s.B.length!==15||!s.B.every(function(row){return Array.isArray(row)&&row.length===15}))return false;
+    if(!Array.isArray(s.bag)||!s.bag.every(shValidTile))return false;
+    if(!Array.isArray(s.P)||s.P.length!==2||!s.P.every(function(p){return p&&Number.isInteger(p.s)&&Array.isArray(p.r)&&p.r.every(shValidTile)}))return false;
+    if(s.cur!==0&&s.cur!==1)return false;
+    var tiles=0;
+    B=s.B.map(function(row){return row.map(function(t){if(!t)return null;tiles++;return{l:t.l,b:t.b?1:0,f:t.f?1:0}})});
+    bag=s.bag.map(function(t){return{l:t.l,b:t.b?1:0}});
+    P=s.P.map(function(p){return{s:p.s,r:p.r.map(function(t){return{l:t.l,b:t.b?1:0}})}});
+    if(tiles+P[0].r.length+P[1].r.length+bag.length!==100)return false;
+    cur=s.cur;passes=s.passes|0;sel=null;over=0;hid=1;wait=null;
+    last=String(s.last||'CONTINUED SAVED GAME.');clearSay();
+    $('ht').textContent='PLAYER '+(cur+1);
+    msg('');show('s-hand');render();
+    return true;
+  }catch(e){return false}
+}
+try{
+  ArcadeShell.init({game:'scrabble',title:'SCRABBLE',mount:'#shMount',
+    who:function(){try{return 'P1 '+P[0].s+' PTS · P2 '+P[1].s+' PTS'}catch(e){return ''}},
+    canResume:function(){try{return ArcadeShell.has('scrabble')&&!shLive()}catch(e){return false}},
+    onResume:function(){shRestore()},
+    canRestart:function(){return true},
+    onRestart:function(){newGame()},
+    soundLabel:function(){const on=window.Shared?Shared.sound.get():true;return 'SOUND: '+(on?'ON':'OFF')},
+    onSound:function(){Shared.sound.toggle();snd()},
+    onQuit:function(){var r=shSnapshot();if(r)ArcadeShell.save('scrabble',r);}});
+  ArcadeShell.autosave('scrabble',function(){return shSnapshot()});
+  document.querySelectorAll('a[href="../index.html"]').forEach(function(a){a.addEventListener('click',function(){var r=shSnapshot();if(r)ArcadeShell.save('scrabble',r)})});
+  $('bContinue').onclick=function(){shRestore()};
+  try{var bc0=$('bContinue');if(bc0)bc0.hidden=!ArcadeShell.has('scrabble')}catch(e){}
+}catch(e){}
 addEventListener('resize',fit);if(window.visualViewport)visualViewport.addEventListener('resize',fit);
 snd();dcText();
 fetch('words.txt').then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{dict=new Set(t.toUpperCase().split(/[\s,]+/).filter(w=>w.length>1));dcText()}).catch(()=>{});

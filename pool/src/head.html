@@ -2,6 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<link rel="stylesheet" href="../shared/shell.css">
 <style>
 /* Layout concept: full-bleed low-res 3D table, HUD as chunky arcade panels with notched pixel corners.
    Single dark look by design: an arcade cabinet screen. */
@@ -54,7 +55,8 @@ button { font: inherit; color: inherit; }
 .bi { width: 11px; height: 11px; box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.35); clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
 .bi.stripe { background-image: linear-gradient(180deg, #fff 0 30%, transparent 30% 70%, #fff 70% 100%); }
 .bi.gone { opacity: .22; filter: grayscale(.6); }
-#mid { display: grid; grid-template-columns: repeat(2, 40px); gap: 4px; pointer-events: auto; }
+#mid { display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; pointer-events: auto; }
+#mid .sh-fab { width: 40px; height: 32px; font-size: 8px; }
 .mini {
   font-family: var(--font-ui); font-size: 8px; line-height: 1; height: 32px; padding: 0; border: 0; cursor: pointer;
   background: var(--panel-hi); color: var(--ink); clip-path: var(--notch); box-shadow: inset 0 0 0 3px var(--edge);
@@ -144,7 +146,7 @@ button { font: inherit; color: inherit; }
   #toast { font-size: 16px; }
 }
 @media (max-height: 520px) {
-  #mid { grid-template-columns: repeat(4, 38px); }
+  #mid { grid-template-columns: repeat(5, 36px); }
   #turn { top: calc(env(safe-area-inset-top, 0px) + 64px); }
   .pcard { padding: 5px 8px 6px; gap: 3px; } #spin { width: 48px; height: 48px; } #power { height: 28px; } #bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
   .box { gap: 8px; } .help { display: none; }
@@ -183,6 +185,7 @@ button { font: inherit; color: inherit; }
       <button class="btn" data-mode="2p">2 PLAYERS <span>PASS &amp; PLAY</span></button>
       <button class="btn" data-mode="practice">PRACTICE <span>NO RULES</span></button>
       <button class="btn" id="bResume" hidden>RESUME <span>BACK TO GAME</span></button>
+      <button class="btn primary" id="bContinue" hidden>CONTINUE <span>SAVED GAME</span></button>
     </div>
     <div class="chips" role="group" aria-label="CPU skill">
       <span class="lab">CPU SKILL</span>

@@ -9,6 +9,16 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="../shared/shell.css">
+<style>
+/* arcade shell title hierarchy: one primary CTA, mode cards, secondary rows */
+#s-title .sh-ss{width:min(94vw,360px)}
+#s-title .sh-modes{margin:12px auto 4px;max-width:340px}
+#s-title .sh-modes .tm{width:auto;min-width:0;margin:0}
+#s-title .tm small{display:block;font-size:7px;opacity:.7;margin-top:4px}
+#shResume[hidden]{display:none}
+.sh-mount{display:inline-block;vertical-align:middle;margin-right:10px}
+</style>
 <style>:root{--bg:#e8d8b0;--bg2:#dcc994;--fg:#2a1d14;--panel:#fff3d1;--edge:#2a1d14;--accent:#e8433a;--bw:344px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1230;--bg2:#231741;--fg:#f5e9c8;--panel:#2e2250;--edge:#0b0616;--accent:#ffd23f}}
 :root[data-theme="dark"]{--bg:#1b1230;--bg2:#231741;--fg:#f5e9c8;--panel:#2e2250;--edge:#0b0616;--accent:#ffd23f}
@@ -200,7 +210,7 @@ button:disabled{opacity:.35;pointer-events:none}
 <div id="pbar" aria-label="World music player"><canvas id="pcov" width="36" height="36"></canvas><a id="ptitle" target="_blank" rel="noopener"></a><button class="pbtn" id="ppb" type="button">PLAY</button><button class="pbtn" id="pnb" type="button" aria-label="Next track">NEXT</button><button class="pbtn" id="pmb" type="button" aria-label="Mute">SND</button><input id="pvol" type="range" min="0" max="100" value="70" aria-label="Volume"><button class="pbtn" id="pex" type="button" aria-label="Expand player">^</button></div>
 <div id="sheet" aria-label="Now playing"><div id="scard"><canvas id="scov" width="96" height="96"></canvas><p id="sct"></p><p id="sca"></p><a id="scl" target="_blank" rel="noopener">YouTube</a><div class="row"><button class="sm" id="spb" type="button">PLAY</button><button class="sm" id="snb" type="button">NEXT</button><button class="sm" id="shx" type="button">CLOSE</button></div></div></div>
 <div id="app">
- <div class="top"><div class="tl"><button class="ic" id="pz" aria-label="Pause"><i></i><i></i></button></div><div class="ttl">PIXEL CHESS</div><div class="tr2"><button class="ic t" id="un" aria-label="Undo" disabled>UNDO</button><button class="ic t" id="hn" aria-label="Hint" style="margin-left:6px">HINT</button></div></div>
+ <div class="top"><div class="tl"><span class="sh-mount" id="shMount"></span><button class="ic" id="pz" aria-label="Pause"><i></i><i></i></button></div><div class="ttl">PIXEL CHESS</div><div class="tr2"><button class="ic t" id="un" aria-label="Undo" disabled>UNDO</button><button class="ic t" id="hn" aria-label="Hint" style="margin-left:6px">HINT</button></div></div>
  <div class="pl" id="pb"><canvas class="pt" id="pt" width="16" height="16" aria-hidden="true"></canvas><span class="ch b"></span><span class="nm" id="nb">BLACK</span><span class="lb" id="sb"></span><span class="mt" id="mb"></span><div class="trw"><canvas id="cb" width="93" height="9" aria-label="Pieces captured by black"></canvas></div></div>
  <div class="px bub" id="bub" aria-live="polite"><span id="bt"></span></div>
  <div id="bw" class="px"><canvas id="cv" width="160" height="160"></canvas></div>
@@ -208,16 +218,22 @@ button:disabled{opacity:.35;pointer-events:none}
  <div class="px rib" id="rb" aria-label="Move list"></div>
 </div>
 <div class="scr on" id="s-title">
- <canvas id="art" width="160" height="48"></canvas>
- <h1 class="logo">PIXEL<br><span>CHESS</span></h1>
- <div id="trk"></div>
- <p id="tq" aria-live="off"></p>
- <button class="big tm" data-m="1">VS CPU</button>
- <button class="big tm" data-m="2">2 PLAYERS</button>
- <div class="row"><button class="sm tm" id="dp">DAILY PUZZLE</button><button class="sm tm" id="onl">ONLINE</button></div>
- <div class="row"><button class="sm tsnd">SND ON</button><button class="sm tfx">FX ON</button></div>
- <div class="row"><button class="sm" id="hp">HOW TO PLAY</button><button class="sm" id="th">THEMES</button><button class="sm" id="pf">PROFILE</button></div>
- <div class="thint">↑↓ SELECT · ENTER START</div>
+ <div class="sh-ss">
+  <canvas id="art" width="160" height="48" class="sh-art"></canvas>
+  <h1 class="logo">PIXEL<br><span>CHESS</span></h1>
+  <div id="trk"></div>
+  <p id="tq" aria-live="off"></p>
+  <button class="sh-play" id="shPlay" type="button">▶ PLAY<small id="shPlaySub">VS CPU</small></button>
+  <button class="sh-play" id="shResume" type="button" hidden>▶ CONTINUE<small>RESUME SAVED GAME</small></button>
+  <div class="sh-modes two" role="group" aria-label="Mode">
+   <button class="big tm" data-m="1" aria-pressed="true">VS CPU<small>LADDER + EXHIBITION</small></button>
+   <button class="big tm" data-m="2" aria-pressed="false">2 PLAYERS<small>PASS &amp; PLAY</small></button>
+  </div>
+  <div class="row"><button class="sm tm" id="dp">DAILY PUZZLE</button><button class="sm tm" id="onl">ONLINE</button></div>
+  <div class="row"><button class="sm" id="hp">HOW TO PLAY</button><button class="sm" id="th">THEMES</button><button class="sm" id="pf">PROFILE</button></div>
+  <div class="row"><button class="sm tsnd">SND ON</button><button class="sm tfx">FX ON</button></div>
+  <div class="thint">↑↓ SELECT · ENTER START</div>
+ </div>
 </div>
 <div class="scr" id="s-opp"><h2>CHOOSE OPPONENT</h2><p id="osm"></p><div id="ol"></div><div class="row"><button class="sm" id="ex">EXHIBITION: OFF</button><button class="sm" id="bz">BLITZ: OFF</button><button class="sm" id="ob">BACK</button></div></div>
 <div class="scr" id="s-net"><div class="px card"><h2>ONLINE</h2><p id="netmsg">HOST OR JOIN A FRIEND. FREE, PEER TO PEER.</p><div class="row"><input id="netcode" maxlength="4" placeholder="CODE" aria-label="Room code" autocomplete="off"></div><div class="row"><button class="sm" id="neth">HOST</button><button class="sm" id="netj">JOIN</button><button class="sm" id="bz2">BLITZ: OFF</button></div><div class="row"><button class="sm" id="netb">BACK</button></div></div></div>
@@ -236,6 +252,7 @@ button:disabled{opacity:.35;pointer-events:none}
 <div class="scr dim" id="s-help"><div class="px card"><h2>HOW TO PLAY</h2>
  <p>TAP OR DRAG A PIECE, THEN A GLOWING SQUARE.<br>GREEN DOT = MOVE<br>RED SQUARE = CAPTURE<br>CASTLING AND EN PASSANT WORK.<br>PAWNS PROMOTE - YOU PICK.<br>EACH PIECE HAS ITS OWN CAPTURE FX.<br>UNDO TAKES BACK A MOVE.<br>HINT SHOWS A GOOD ONE.<br>BLITZ CLOCKS ON THE CPU SCREEN.<br>TUTOR IN PAUSE EXPLAINS EVERY MOVE.<br>FINISHERS UNLOCK AS YOU WIN - EQUIP THEM UNDER THEMES.</p>
  <button class="big" id="hb">BACK</button></div></div>
+<script src="../shared/shell.js"></script>
 <script>
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const $=id=>document.getElementById(id),Q=q=>document.querySelectorAll(q);
@@ -1004,9 +1021,9 @@ SFX.unlock=()=>[392,523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,
 SFX.lose=()=>[330,262,196].forEach((f,i)=>setTimeout(()=>tone(f,.25,'sawtooth',.05),i*160));
 const scr=(id,on)=>{$(id).classList.toggle('on',on);const t=$('s-title').classList.contains('on')||$('s-over').classList.contains('on');
 if(t&&!artT)artT=setInterval(artTick,110);if(!t&&artT){clearInterval(artT);artT=null}};
-function startGame(m,o,ex){au();netLeave();ai=m==1;if(o){opp=o;exh=!!ex}gmode=!ai?'2p':(exh?'exh':'ladder');inGame=true;paused=false;['s-title','s-opp','s-net','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
+function startGame(m,o,ex){au();netLeave();ai=m==1;if(o){opp=o;exh=!!ex}gmode=!ai?'2p':(exh?'exh':'ladder');try{if(gmode=='2p'||gmode=='ladder'||gmode=='exh')ArcadeShell.clear('chess')}catch(e){}inGame=true;paused=false;['s-title','s-opp','s-net','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(i=>scr(i,0));
 $('app').classList.add('on');$('nb').textContent=ai?opp.name:'BLACK - P2';setupOpp();sceneSet();$('nwh').textContent=ai?'WHITE - YOU':'WHITE - P1';size();init()}
-function toTitle(){inGame=false;paused=false;an=null;sa=null;pend=null;drag=null;pp=[];hop=null;mateAnim=null;gid++;reqId++;$('app').classList.remove('on');['s-opp','s-net','s-pause','s-over','s-help','s-promo'].forEach(i=>scr(i,0));scr('s-title',1);puzLabel();rankLabel();netLeave();taunt();tmFocus();sceneSet()}
+function toTitle(){try{shSave()}catch(e){}inGame=false;paused=false;an=null;sa=null;pend=null;drag=null;pp=[];hop=null;mateAnim=null;gid++;reqId++;$('app').classList.remove('on');['s-opp','s-net','s-pause','s-over','s-help','s-promo'].forEach(i=>scr(i,0));scr('s-title',1);puzLabel();rankLabel();netLeave();taunt();tmFocus();sceneSet();try{shRefreshTitle()}catch(e){}}
 function pause(){if(!inGame||an||sa||over||paused||pend)return;if(blitz)CLK[turn]-=Date.now()-clkT0;paused=true;pauseAt=Date.now();drag=null;scr('s-pause',1);musDuck(1)}
 function resume(){if(paused)pausedMs+=Date.now()-pauseAt;paused=false;if(blitz)clkT0=Date.now();scr('s-pause',0);musDuck(0);if(aiPend){const m=aiPend;aiPend=null;play(...m)}else if(aiWait){aiWait=0;setTimeout(aiMove,150)}}
 function showPromo(){const row=$('pr');row.innerHTML='';
@@ -1015,7 +1032,7 @@ const cn=document.createElement('canvas');cn.width=cn.height=18;cn.style.width=c
 blit(cn.getContext('2d'),turn+t,2,18-SPR[t].length);bt.appendChild(cn);
 bt.onclick=()=>{const m=pend;pend=null;scr('s-promo',0);if(m)play(m.r,m.c,m.y,m.x,t)};row.appendChild(bt)}
 scr('s-promo',1)}
-function showOver(mate,flag){const w=turn=='w'?'b':'w';$('ot').textContent=flag?'TIME!':mate?'CHECKMATE':'STALEMATE';
+function showOver(mate,flag){try{ArcadeShell.clear('chess')}catch(e){}const w=turn=='w'?'b':'w';$('ot').textContent=flag?'TIME!':mate?'CHECKMATE':'STALEMATE';
 $('os').textContent=(mate||flag)?(w=='w'?(ai?'YOU WIN!':'WHITE WINS!'):(ai?'CPU WINS!':'BLACK WINS!')):'IT IS A DRAW';
 ovMode=mate?w:'d';$('oq').textContent=ai&&lastLine?'"'+lastLine.toUpperCase()+'" - '+opp.name:'';
 const ou=$('ou'),ouc=$('ouc'),nx=$('nx');ou.classList.remove('on');ouc.classList.remove('on');nx.classList.remove('on');let unl=null;
@@ -1506,4 +1523,73 @@ if(s.big){bx.fillRect(X-1,Y,3,1);bx.fillRect(X,Y-1,1,3)}}}
 let bgI=0;function bgStart(){bgBuild();bgTick();clearInterval(bgI);if(!matchMedia('(prefers-reduced-motion:reduce)').matches)bgI=setInterval(bgTick,110)}
 applyPieces();mkbg(boardCols());size();init();scr('s-title',1);bgStart();
 try{const dd=new URLSearchParams(location.search).get('d');if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(dd))startPuzzle(dd)}catch(e){}
+/* ---- arcade shell: start hierarchy, sidebar drawer, snapshots (game: chess) ---- */
+var shMode = 1;
+function shBoards(g){return{g:g.map(function(r){return r.slice()}),cr:{wK:g.cr.wK,wQ:g.cr.wQ,bK:g.cr.bK,bQ:g.cr.bQ},ep:g.ep?g.ep.slice():null}}
+function shUnboards(s){var nb=s.g.map(function(r){return r.slice()});nb.cr={wK:s.cr.wK,wQ:s.cr.wQ,bK:s.cr.bK,bQ:s.cr.bQ};nb.ep=s.ep?s.ep.slice():null;return nb}
+function shSnapshot(){
+ if(!inGame||over)return null;
+ if(gmode!='2p'&&gmode!='ladder'&&gmode!='exh')return null;
+ try{
+  return{v:1,gmode:gmode,ai:ai,oppId:ai&&opp?opp.id:null,lvl:lvl|0,blitz:blitz|0,
+   cw:Math.max(0,Math.round(CLK.w)),cb:Math.max(0,Math.round(CLK.b)),undos:undosLeft,exh:!!exh,
+   turn:turn,b:shBoards(b),hist:hist.map(function(h){return{b:shBoards(h.b),t:h.t,mv:h.mv.slice(),san:h.san,cap:!!h.cap,pr:h.pr||null}})};
+ }catch(e){return null}
+}
+function shValid(s){
+ try{
+  if(!s||s.v!==1)return null;
+  if(s.gmode!=='2p'&&s.gmode!=='ladder'&&s.gmode!=='exh')return null;
+  if(s.turn!=='w'&&s.turn!=='b')return null;
+  if(!s.b||!Array.isArray(s.b.g)||s.b.g.length!==8||!s.b.g.every(function(r){return Array.isArray(r)&&r.length===8}))return null;
+  if(!s.b.cr)return null;
+  if(!Array.isArray(s.hist))return null;
+  if(s.ai&&(typeof s.oppId!=='string'||!OPPS.some(function(o){return o.id===s.oppId})))return null;
+  return s;
+ }catch(e){return null}
+}
+function shRestore(){
+ var rec=null;try{rec=ArcadeShell.load('chess')}catch(e){}
+ var s=rec&&shValid(rec.state);if(!s)return false;
+ au();netLeave();
+ ai=!!s.ai;opp=s.ai?(OPPS.find(function(o){return o.id===s.oppId})||OPPS[0]):OPPS[0];exh=!!s.exh;
+ gmode=s.gmode;lvl=s.lvl|0;blitz=s.blitz|0;CLK={w:Math.max(0,s.cw|0),b:Math.max(0,s.cb|0)};clkT0=Date.now();
+ undosLeft=Math.max(0,s.undos|0);recorded=false;lastOut=null;t0g=Date.now();pausedMs=0;
+ b=shUnboards(s.b);turn=s.turn;
+ hist=s.hist.map(function(h){return{b:shUnboards(h.b),t:h.t,mv:h.mv.slice(),san:String(h.san||''),cap:!!h.cap,pr:h.pr||null}});
+ sel=null;moves=[];last=null;over=false;flagWin=false;hint=null;hop=null;mateAnim=null;
+ pp=[];drag=null;pend=null;aiPend=null;aiWait=0;an=null;sa=null;shake=0;flash=0;chkCol=null;
+ gid++;reqId++;inGame=true;paused=false;
+ ['s-title','s-opp','s-net','s-pause','s-over','s-help','s-promo','s-themes','s-prof'].forEach(function(i){scr(i,0)});
+ $('app').classList.add('on');
+ $('nb').textContent=ai?opp.name:'BLACK - P2';
+ $('nwh').textContent=ai?'WHITE - YOU':'WHITE - P1';
+ setupOpp();sceneSet();size();status();draw();refreshUI();
+ try{BUS.emit('newgame')}catch(e){}
+ if(ai&&turn=='b'&&!over)setTimeout(aiMove,150);
+ return true;
+}
+function shSave(){try{if(inGame&&!over){var st=shSnapshot();if(st){ArcadeShell.save('chess',st);return}}ArcadeShell.clear('chess')}catch(e){}}
+function shRefreshTitle(){
+ var has=false;try{has=!inGame&&ArcadeShell.has('chess')}catch(e){}
+ var r=$('shResume');if(r)r.hidden=!has;
+ var sub=$('shPlaySub');if(sub)sub.textContent=shMode===1?'VS CPU':'2 PLAYERS';
+}
+Q('[data-m]').forEach(function(e){e.addEventListener('click',function(){shMode=+e.dataset.m||1;
+ Q('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',x===e?'true':'false')});shRefreshTitle();});});
+$('shPlay').addEventListener('click',function(){var m=document.querySelector('[data-m="'+shMode+'"]');if(m)m.click();});
+$('shResume').addEventListener('click',function(){if(!shRestore())shRefreshTitle();});
+try{
+ var shDrawer=ArcadeShell.init({game:'chess',title:'PIXEL CHESS',mount:'#shMount',
+  who:function(){try{return 'PILOT '+(((prof&&prof.name)||'PLAYER').toUpperCase())+' · '+xpTitle((prof&&prof.xp)||0)}catch(e){return ''}},
+  canResume:function(){try{return !inGame&&ArcadeShell.has('chess')}catch(e){return false}},
+  onResume:function(){shRestore()},
+  canRestart:function(){return inGame&&!over&&gmode!=='online'&&gmode!=='puzzle'},
+  onRestart:function(){try{$('rt').click()}catch(e){}},
+  soundLabel:function(){return snd?'SND ON':'SND OFF'},
+  onSound:function(){var t=document.querySelector('.tsnd');if(t)t.click()},
+  onQuit:function(){shSave()}});
+ ArcadeShell.autosave('chess',function(){return(inGame&&!over)?shSnapshot():null});
+}catch(e){}
+shRefreshTitle();
 </script></body></html>

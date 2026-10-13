@@ -166,6 +166,24 @@ const server = http.createServer((req, res) => {
     await ctx.close();
   }
 
+  // 4b. search + continue playing
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }), pg = await ctx.newPage();
+    await pg.goto(base);
+    const vis = () => pg.$$eval('.card', a => a.filter(x => x.style.display !== 'none').map(x => x.querySelector('h2').textContent));
+    await pg.fill('#q', 'ludo');
+    ok('search narrows the catalog to one card', (await vis()).join() === 'LUDO', await vis());
+    await pg.fill('#q', '');
+    ok('clearing search restores all eight', (await vis()).length === 8);
+    ok('no continue row without snapshots', await pg.evaluate(() => document.getElementById('continue').hidden));
+    await pg.evaluate(() => localStorage.setItem('pixelarcade.save.pool', JSON.stringify({ v: 1, t: Date.now(), state: { v: 1 } })));
+    await pg.reload();
+    ok('a snapshot adds a continue row', await pg.evaluate(() => !document.getElementById('continue').hidden) && /POOL/.test(await pg.locator('#continue-row').innerText()));
+    await Promise.all([pg.waitForURL('**/pool/index.html'), pg.click('#continue-row a')]);
+    ok('continue chip opens the game', pg.url().includes('pool/index.html'));
+    await ctx.close();
+  }
+
   // 5. offline after first visit
   {
     const ctx = await browser.newContext(), pg = await ctx.newPage();

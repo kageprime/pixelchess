@@ -368,6 +368,7 @@ function placeValid(px, pz) {
 }
 
 function newGame(mode, diff) {
+  try{ArcadeShell.clear('pool')}catch(e){}
   lastSettings = { mode, diff };
   Object.assign(game, { mode, diff, cur: 0, breakShot: true, ballInHand: true, kitchen: true, over: false, cpu: null, potCount: 0 });
   game.players = mode === 'sim' ? [{ name: 'CPU A', group: null }, { name: 'CPU B', group: null }] : mode === 'cpu' ? [{ name: 'YOU', group: null }, { name: 'CPU', group: null }]
@@ -597,6 +598,7 @@ function nextTurn() {
 }
 function endGame(winner, why) {
   game.over = true; state = 'over'; cueS.vis = false; updateHUD();
+  try{ArcadeShell.clear('pool')}catch(e){}
   const w = game.players[winner];
   const youWin = game.mode === 'cpu' ? winner === 0 : true;
   try { if (window.Shared && game.mode === 'cpu') { Shared.recordGame('pool', winner === 0); Shared.addXP('pool', winner === 0 ? Shared.XP.win : Shared.XP.loss); } } catch (e) {}
@@ -934,11 +936,77 @@ document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click'
   document.querySelectorAll('[data-diff]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.diff === d)));
 }));
 document.querySelectorAll('[data-diff]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.diff === lastSettings.diff)));
+/* ---- arcade shell: sidebar + snapshots (game: pool) ---- */
+function shBall(sb){return{n:sb.n,x:sb.x,z:sb.z,vx:sb.vx,vz:sb.vz,alive:sb.alive,pocket:sb.pocket,q:Array.from(sb.q),y:sb.y}}
+function shSnapshot(){
+  if(game.over||paused||isCpuTurn())return null;
+  if(state!=='place'&&state!=='aim')return null;
+  try{
+    return{v:1,mode:game.mode,diff:game.diff,cur:game.cur,breakShot:!!game.breakShot,
+      ballInHand:!!game.ballInHand,kitchen:!!game.kitchen,potCount:game.potCount|0,
+      players:game.players.map(function(p){return{name:p.name,group:p.group}}),
+      aim:aim,power:power,spinX:spinX,spinY:spinY,
+      balls:balls.map(shBall)};
+  }catch(e){return null}
+}
+function shValid(s){
+  try{
+    if(!s||s.v!==1)return null;
+    if(s.mode!=='cpu'&&s.mode!=='2p'&&s.mode!=='practice')return null;
+    if(!Array.isArray(s.balls)||s.balls.length!==16)return null;
+    var ns=s.balls.map(function(bd){return bd.n}).sort(function(a,b){return a-b});
+    for(var i=0;i<16;i++)if(ns[i]!==i)return null;
+    for(var k=0;k<16;k++){var bd=s.balls[k];
+      if(![bd.x,bd.z,bd.vx,bd.vz,bd.y].every(Number.isFinite))return null;
+      if(!Array.isArray(bd.q)||bd.q.length!==4||!bd.q.every(Number.isFinite))return null;
+    }
+    if(!Array.isArray(s.players)||(s.mode==='practice'?s.players.length!==1:s.players.length!==2))return null;
+    if(s.cur!==0&&s.cur!==1)return null;
+    if(typeof s.aim!=='number'||!Number.isFinite(s.aim))return null;
+    return s;
+  }catch(e){return null}
+}
+function shRestore(){
+  var rec=null;try{rec=ArcadeShell.load('pool')}catch(e){}
+  var s=rec&&shValid(rec.state);if(!s)return false;
+  try{
+    newGame(s.mode,[0,1,2].indexOf(s.diff)>=0?s.diff:1);
+    game.cur=(s.cur===1&&game.players.length>1)?1:0;
+    game.breakShot=!!s.breakShot;game.potCount=s.potCount|0;
+    game.ballInHand=!!s.ballInHand;game.kitchen=!!s.kitchen;
+    s.players.forEach(function(sp,i){if(game.players[i])game.players[i].group=sp.group||null});
+    s.balls.forEach(function(sb){var b=balls[sb.n];b.x=sb.x;b.z=sb.z;b.vx=sb.vx;b.vz=sb.vz;
+      b.alive=!!sb.alive;b.pocket=sb.pocket==null?null:sb.pocket;b.q=sb.q.slice();b.y=sb.y;
+      b.mesh.visible=b.shadow.visible=b.alive;});
+    if(game.ballInHand)enterPlace();else enterAim();
+    var c=balls[0];c.x=s.balls[0].x;c.z=s.balls[0].z;c.vx=c.vz=0;
+    aim=s.aim;power=Math.min(1,Math.max(0,s.power));setPower(power);
+    spinX=Math.min(1,Math.max(-1,s.spinX));spinY=Math.min(1,Math.max(-1,s.spinY));drawSpin();
+    updateHUD();
+    return true;
+  }catch(e){return false}
+}
+try{
+  ArcadeShell.init({game:'pool',title:'PIXEL POOL',mount:'#mid',fabClass:'mini',
+    who:function(){try{return game.players.length>1?game.players[0].name+' · '+game.players[1].name:(game.players[0]?game.players[0].name+' · PRACTICE':'')}catch(e){return ''}},
+    canResume:function(){try{return ArcadeShell.has('pool')&&(state==='menu'||game.over)}catch(e){return false}},
+    onResume:function(){shRestore()},
+    canRestart:function(){try{return!game.over&&(state==='place'||state==='aim')}catch(e){return false}},
+    onRestart:function(){$('bAgain').click()},
+    soundLabel:function(){return 'SFX: '+(Snd.sfxOn?'ON':'OFF')},
+    onSound:function(){toggleSfx()},
+    onQuit:function(){var r=shSnapshot();if(r)ArcadeShell.save('pool',r);}});
+  ArcadeShell.autosave('pool',function(){return shSnapshot()});
+function shMenuSync(){try{$('bContinue').hidden=!(ArcadeShell.has('pool')&&state==='menu')}catch(e){}}
+$('bContinue').addEventListener('click',()=>{Snd.init();shRestore()});
+shMenuSync();
+}catch(e){}
 $('bAgain').addEventListener('click', () => { Snd.init(); newGame(lastSettings.mode, lastSettings.diff); });
 $('bBack').addEventListener('click', () => { Snd.init(); toMenu(); });
 function toMenu() {
   state = 'menu'; game.over = false; paused = false; cueS.vis = false; timers = []; shot = null;
   $('over').hidden = true; $('hud').hidden = true; $('menu').hidden = false; $('menu').classList.remove('ingame'); $('bResume').hidden = true;
+  try{shMenuSync()}catch(e){}
   rack(); demoT = 0; resize(); camS.init = true;
 }
 $('bMus').setAttribute('aria-pressed', String(Snd.musOn)); $('bSfx').setAttribute('aria-pressed', String(Snd.sfxOn));

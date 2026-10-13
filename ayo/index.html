@@ -8,6 +8,7 @@
 <title>Ayo 3D | Pixel Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="../shared/shell.css">
 <style>
 :root{
   --bg:#1b1230; --panel:#2a1c4a; --edge:#0f0a1d; --text:#f3ecff; --dim:#9d8cc4;
@@ -77,6 +78,7 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
     <div class="controls">
       <button class="btn" id="again">NEW GAME</button>
       <button class="btn" id="view">FLIP VIEW</button>
+      <span class="sh-mount" id="shMount"></span>
     </div>
     <div class="log" id="log" aria-label="Move list"></div>
     <div class="bar">
@@ -97,6 +99,7 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
 <!-- Vendored under /shared/vendor/three.min.js (MIT) so the game works offline. -->
 <script src="../shared/vendor/three.min.js"></script>
 <script src="../shared/shared.js"></script>
+<script src="../shared/shell.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
@@ -369,6 +372,7 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
   function human(i){ if (canHuman(i)) play(i, gid); }
   function finish(){
     busy = true; renderPlayers(); refresh();
+    try{ArcadeShell.clear('ayo')}catch(e){}
     const w = st.winner, nm = names(); let text;
     if (w === -1) text = "DRAW " + st.s[0] + "-" + st.s[1];
     else if (mode === "cpu") {
@@ -391,7 +395,7 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
   function group(sel, fn){
     document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => {
       document.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
-      fn(b.dataset.v); starter = 0; reset(false);
+      fn(b.dataset.v); starter = 0; try{ArcadeShell.clear('ayo')}catch(e){} reset(false);
     }));
   }
   group("#md", v => { mode = v; $("#lv").hidden = v !== "cpu"; });
@@ -424,6 +428,58 @@ small{color:var(--dim);font-size:8px;line-height:1.9}
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
+  /* ---- arcade shell: sidebar + snapshots (game: ayo) ---- */
+  function shSnapshot(){
+    if(!st||st.over||!(st.n>0))return null;
+    if(busy)return null;
+    try{
+      if(!st.b.every(function(x){return Number.isInteger(x)&&x>=0&&x<=48}))return null;
+      if(!st.s.every(function(x){return Number.isInteger(x)&&x>=0}))return null;
+      return{v:1,mode:mode,level:level,starter:starter,moveNo:moveNo,
+        st:{b:st.b.slice(),s:st.s.slice(),t:st.t,n:st.n}};
+    }catch(e){return null}
+  }
+  function shSegSync(){
+    document.querySelectorAll("#md button").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.v===mode)});
+    document.querySelectorAll("#lv button").forEach(function(x){x.setAttribute("aria-pressed",+x.dataset.v===level)});
+    $("#lv").hidden=mode!=="cpu";
+  }
+  function shRestore(){
+    var rec=null;try{rec=ArcadeShell.load('ayo')}catch(e){}
+    var s=rec&&rec.state;if(!s||s.v!==1)return false;
+    try{
+      if(s.mode!=="cpu"&&s.mode!=="2p")return false;
+      if(!s.st||!Array.isArray(s.st.b)||s.st.b.length!==12||!Array.isArray(s.st.s)||s.st.s.length!==2)return false;
+      if(!s.st.b.every(function(x){return Number.isInteger(x)&&x>=0&&x<=48}))return false;
+      if(s.st.s.some(function(x){return !Number.isInteger(x)||x<0}))return false;
+      if(s.st.t!==0&&s.st.t!==1)return false;
+      if(s.st.b.reduce(function(a,x){return a+x},0)+s.st.s[0]+s.st.s[1]!==48)return false;
+      mode=s.mode;level=[1,2,3].indexOf(s.level)>=0?s.level:2;starter=s.starter?1:0;moveNo=s.moveNo|0;
+      shSegSync();
+      var g=++gid;
+      st={b:s.st.b.slice(),s:s.st.s.slice(),t:s.st.t,over:false,winner:null,n:s.st.n|0};
+      resetSeeds(st.b);
+      var idx=st.b.reduce(function(a,x){return a+x},0);
+      for(var p=0;p<2;p++)for(var k=0;k<st.s[p];k++){var sd=seeds[idx++];if(!sd)break;place(sd,"store",p);sd.anim=null;sd.mesh.position.copy(sd.target);}
+      logEl.innerHTML="";capShow=[];pulse=[];
+      azT=0;busy=false;setStatus();
+      if(mode==="cpu"&&st.t===1)cpuTurn(g);
+      return true;
+    }catch(e){return false}
+  }
+  try{
+    ArcadeShell.init({game:'ayo',title:'AYO 3D',mount:'#shMount',sound:false,
+      who:function(){return 'W'+wins+' L'+losses},
+      canResume:function(){try{return ArcadeShell.has('ayo')&&(!st||st.over||!(st.n>0))}catch(e){return false}},
+      onResume:function(){shRestore()},
+      canRestart:function(){return true},
+      onRestart:function(){$("#again").click()},
+      onQuit:function(){var r=shSnapshot();if(r)ArcadeShell.save('ayo',r);}});
+    document.querySelector('#again').addEventListener('click',function(){try{ArcadeShell.clear('ayo')}catch(e){}});
+    ArcadeShell.autosave('ayo',function(){return shSnapshot()});
+    document.querySelector('a[href="../index.html"]').addEventListener('click',function(){var r=shSnapshot();if(r)ArcadeShell.save('ayo',r);});
+  }catch(e){}
+
   resize(); reset(false); requestAnimationFrame(frame);
 })();
 </script>

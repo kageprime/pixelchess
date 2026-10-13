@@ -4,7 +4,7 @@
   "private": true,
   "description": "Pixel Arcade - retro lobby plus pixel-art games (static, offline PWA)",
   "scripts": {
-    "test": "node tests/engine-test.js && node tests/api-test.js && node tests/p2p-test.js && node tests/hub-test.js && node tests/pool-test.js && node tests/newgames-test.js && node tests/scrabble-test.js && node tests/smoke-test.js && node tests/ladder-test.js && node tests/themes-test.js && node tests/layout-test.js",
+    "test": "node tests/engine-test.js && node tests/api-test.js && node tests/p2p-test.js && node tests/hub-test.js && node tests/pool-test.js && node tests/newgames-test.js && node tests/shell-test.js && node tests/scrabble-test.js && node tests/smoke-test.js && node tests/ladder-test.js && node tests/themes-test.js && node tests/layout-test.js",
     "test:engine": "node tests/engine-test.js"
   },
   "devDependencies": { "playwright": "^1.50.0" }

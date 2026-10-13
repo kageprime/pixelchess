@@ -3,7 +3,7 @@
 Retro arcade lobby plus pixel-art games. Static site, no build step: deploy the repo root (Vercel needs nothing else).
 
 ```
-/index.html            the hub (lobby): game cards, profile chip, sound toggle
+/index.html            the hub (lobby): Option B catalog, passport chip, spotlight, sound toggle
 /chess/index.html      Pixel Chess (playable)
 /ayo/index.html        Ayo 3D: mancala sowing vs CPU or 2 players (playable)
 /connect4/index.html   Connect 4: drop discs vs CPU or 2 players (playable)
@@ -14,7 +14,9 @@ Retro arcade lobby plus pixel-art games. Static site, no build step: deploy the 
 /scrabble/words.txt    ENABLE word list, public domain (see WORDS-SOURCE.txt)
 /shared/arcade.css     shared look: theme vars, .px / .sm / .big, scanlines
 /shared/shared.js      Shared.addXP(game, n), Shared.profile(), Shared.sound, Shared.blip()
-/shared/vendor/        vendored files (font, three.js): see vendor/README.txt
+/shared/shell.js        ArcadeShell: sidebar drawer, snapshots (pixelarcade.save.<game>), start helpers
+/shared/shell.css       shell chrome styles (.sh-*), self-contained dark-arcade palette
+/shared/vendor/        vendored files (font + OFL, three.js, tailwind): see vendor/README.txt
 /sw.js                 service worker: precaches everything for offline play
 /api/scores.js         world leaderboards + ladder (Vercel serverless + Upstash)
 /api/signal.js         P2P matchmaking signalling (Vercel serverless + Upstash)
@@ -30,6 +32,16 @@ Chess used to live at the site root. `/` is now the hub and chess is at `/chess`
 4. Add `<game>/index.html` to `PRECACHE` in `sw.js` and bump `CACHE`.
 5. In the hub, change that card from `SOON` to `PLAYABLE` (give it an `href`, drop `role`, `aria-disabled` and `tabindex`, remove the `soon` class).
 6. No external CDN at runtime: vendor anything you need under `/shared/vendor/` with its licence.
+
+## Arcade Shell (sidebar, start screens, snapshots)
+
+One cross-game chrome, no framework: `shared/shell.js` + `shared/shell.css` (dependency-free,
+`.sh-*` namespaced). Every game mounts a menu button that opens the same drawer: CONTINUE
+(saved snapshot), RESTART, SOUND, QUIT TO ARCADE. Snapshots live under
+`pixelarcade.save.<game>` as `{v:1, t, state}`, auto-saved on quit and on `pagehide`, cleared
+on new game and on game over. Corrupt or foreign snapshots fail closed (validated, never
+trusted). The hub shows a CONTINUE PLAYING row from `ArcadeShell.list()` plus catalog search.
+Chess pilots the start-screen template: one PLAY call-to-action, mode cards, secondary rows.
 
 ## Pixel Chess
 
@@ -71,9 +83,10 @@ npm test
 
 ```
 Open index.html in a browser (or serve the repo root; the hub is index.html).
-node hub-test.js      lobby: cards, links, layout at 3 sizes, profile chip, XP, sound, offline
+node hub-test.js      lobby: cards, links, search, continue row, layout at 3 sizes, profile chip, XP, sound, offline
 node pool-test.js     pool: rack, sim, CPU, HUD input, layout, XP
-node newgames-test.js ayo/connect4/ludo: shared XP wiring, connect4 gameplay, 3D boot, lobby links
+node newgames-test.js ayo/connect4/ludo: shared XP wiring, shell wiring, connect4 gameplay, 3D boot, lobby links
+node shell-test.js    shell: chess title hierarchy, drawer, snapshot quit/resume round-trips (chess, connect4, ayo, ludo)
 node scrabble-test.js words: board, scoring, blanks, bingo, word list, swap/pass/end, XP, layout
 node engine-test.js   rules (perft), SAN, CPU picks and personalities, music tables
 node api-test.js      world leaderboard + signalling API (mocked store)
