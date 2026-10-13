@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1230">
+<title>Ludo 3D | Pixel Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+:root{
+  --bg:#1b1230; --panel:#2a1c4a; --edge:#0f0a1d; --text:#f3ecff; --dim:#9d8cc4;
+  --red:#ff4f6d; --grn:#3ddc84; --yel:#ffd23f; --blu:#4aa8ff;
+  --px:"Press Start 2P",ui-monospace,"Courier New",monospace;
+  --pix:polygon(30% 0,70% 0,70% 10%,90% 10%,90% 30%,100% 30%,100% 70%,90% 70%,90% 90%,70% 90%,70% 100%,30% 100%,30% 90%,10% 90%,10% 70%,0 70%,0 30%,10% 30%,10% 10%,30% 10%);
+  box-sizing:border-box;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--px);min-height:100%}
+body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 12px 28px;font-size:10px;line-height:1.7}
+a{color:var(--dim);text-decoration:none}
+a:hover,a:focus-visible{color:var(--yel)}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+header,.bar,#status,#wrap,.controls{width:min(100%,520px)}
+header{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:14px;margin:0;color:var(--yel);text-shadow:2px 2px 0 var(--edge)}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:flex;border:3px solid var(--edge);background:var(--panel)}
+.seg button{font:inherit;color:var(--dim);background:none;border:0;padding:8px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--yel);color:var(--edge)}
+.c0{--c:var(--red)}.c1{--c:var(--grn)}.c2{--c:var(--yel)}.c3{--c:var(--blu)}
+#status{min-height:36px;display:flex;align-items:center;gap:10px;background:var(--panel);border:3px solid var(--edge);padding:8px 10px}
+.chip{width:16px;height:16px;flex:none;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+#wrap{position:relative;aspect-ratio:1;background:var(--bg);border:4px solid var(--edge);box-shadow:6px 6px 0 var(--edge);overflow:hidden}
+#wrap::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
+#gl{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+.controls{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.die{width:84px;height:84px;padding:0;background:var(--panel);border:4px solid var(--edge);box-shadow:4px 4px 0 var(--edge);cursor:pointer}
+.die canvas{width:100%;height:100%;display:block}
+.die:disabled{cursor:default;opacity:.6}
+.die:not(:disabled){animation:hop .6s steps(2) infinite}
+@keyframes hop{50%{transform:translateY(-4px)}}
+.btn{font:inherit;background:var(--yel);color:var(--edge);border:3px solid var(--edge);padding:10px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--edge)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+.die{border-radius:10px;overflow:hidden}
+small{color:var(--dim);font-size:8px;text-align:center;max-width:440px}
+.score{color:var(--dim)}
+@media (prefers-reduced-motion:reduce){.die:not(:disabled){animation:none}}
+
+/* ---- two-pane layout: board left, panel right ---- */
+.app{--bw:min(calc(100vh - 40px),calc(100vw - 440px));display:flex;gap:20px;align-items:stretch;justify-content:center;width:100%;max-width:1120px}
+body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-height:100vh;padding:18px 14px}
+.stage{flex:none;width:max(320px,var(--bw))}
+.side{flex:0 0 360px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.side header,.side .bar,.side .controls,.side #status,.stage #board,.stage #wrap{width:100%}
+.side .controls{justify-content:flex-start}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pcard{--c:var(--yel);display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel);border:3px solid var(--edge);border-left:8px solid var(--c);opacity:.65}
+.pcard.on{opacity:1;box-shadow:0 0 0 2px var(--c)}
+.pcard.r{--c:var(--red)}.pcard.y{--c:var(--yel)}
+.pcard .nm{flex:1}
+.pcard .pg{color:var(--dim);font-size:8px}
+.log{flex:1;min-height:100px;overflow:auto;background:var(--panel);border:3px solid var(--edge);padding:8px 10px;font-size:8px;line-height:2.1}
+.log b{color:var(--c)}.log b.r{color:var(--red)}.log b.y{color:var(--yel)}
+.log:empty::before{content:"MOVES APPEAR HERE";color:var(--dim)}
+@media (max-width:900px){
+  body{align-items:flex-start}
+  .app{flex-direction:column;align-items:center}
+  .stage{width:min(100%,520px)}
+  .side{flex:none;width:min(100%,520px)}
+  .log{flex:none;max-height:150px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="stage"><div id="wrap"><canvas id="gl" aria-label="Ludo board"></canvas></div></section>
+  <aside class="side">
+    <header class="top"><a href="../index.html">&lt; LOBBY</a><h1>LUDO 3D</h1><span class="score" id="score">W0 L0</span></header>
+    <div class="plist" id="players"></div>
+    <div id="status" role="status" aria-live="polite"><span class="chip c0" id="chip"></span><span id="msg">LOADING 3D...</span></div>
+    <div class="controls">
+      <button class="die" id="die" aria-label="Roll the die"><canvas id="dc"></canvas></button>
+      <button class="btn" id="view">VIEW</button>
+      <button class="btn" id="again">NEW GAME</button>
+    </div>
+    <div class="log" id="log" aria-label="Move list"></div>
+    <div class="bar">
+      <div class="seg" id="np" role="group" aria-label="Players">
+        <button data-v="2" aria-pressed="false">2P</button>
+        <button data-v="3" aria-pressed="false">3P</button>
+        <button data-v="4" aria-pressed="true">4P</button>
+      </div>
+      <div class="seg" id="md" role="group" aria-label="Mode">
+        <button data-v="cpu" aria-pressed="true">VS CPU</button>
+        <button data-v="pass" aria-pressed="false">PASS &amp; PLAY</button>
+      </div>
+    </div>
+    <small>DRAG TO ROTATE. PINCH OR SCROLL TO ZOOM. TAP A GLOWING TOKEN TO MOVE. A 6, A CAPTURE OR REACHING HOME GIVES ANOTHER ROLL.</small>
+  </aside>
+</main>
+
+<!-- Vendored under /shared/vendor/three.min.js (MIT) so the game works offline. -->
+<script src="../shared/vendor/three.min.js"></script>
+<script src="../shared/shared.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const msg = $("#msg"), chip = $("#chip"), die = $("#die");
+  if (typeof THREE === "undefined") { msg.textContent = "3D ENGINE FAILED TO LOAD. CHECK CONNECTION."; return; }
+
+  const NAMES = ["RED", "GREEN", "YELLOW", "BLUE"];
+  const COL = [0xff4f6d, 0x3ddc84, 0xffd23f, 0x4aa8ff];
+  const START = [0, 13, 26, 39], SAFE = new Set([0, 13, 26, 39, 8, 21, 34, 47]);
+  const BASES = [[0,0],[9,0],[9,9],[0,9]], SPOT = [[1,1],[4,1],[1,4],[4,4]];
+  const OFF = [[-.24,-.24],[.24,-.24],[-.24,.24],[.24,.24]];
+  const AZ = [-160, 160, 20, -20].map(d => d * Math.PI / 180);
+  const rot = (x, y, k) => { while (k--) [x, y] = [14 - y, x]; return [x, y]; };
+
+  const PATH = [];
+  const seg = (x, y, dx, dy, n) => { for (let i = 0; i < n; i++) PATH.push([x + dx * i, y + dy * i]); };
+  seg(1,6,1,0,5); seg(6,5,0,-1,6); seg(7,0,1,0,2); seg(8,1,0,1,5); seg(9,6,1,0,6); seg(14,7,0,1,2);
+  seg(13,8,-1,0,5); seg(8,9,0,1,6); seg(7,14,-1,0,2); seg(6,13,0,-1,5); seg(5,8,-1,0,6); seg(0,7,0,-1,2);
+
+  // ---- arcade lobby XP: hub-owned amounts only, via shared/shared.js ----
+  function awardResult(won){ try { if (window.Shared && mode === "cpu") { Shared.recordGame('ludo', won); Shared.addXP('ludo', won ? Shared.XP.win : Shared.XP.loss); } } catch(e){} }
+  let ac;
+  function beep(f, d = .07){
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "square"; o.frequency.value = f; g.gain.value = .04;
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    }catch(e){}
+  }
+
+  // ================= 3D SCENE =================
+  let renderer, dieR;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: $("#gl"), antialias: true });
+    dieR = new THREE.WebGLRenderer({ canvas: $("#dc"), antialias: true });
+  } catch (e) { msg.textContent = "WEBGL NOT SUPPORTED ON THIS DEVICE."; return; }
+  renderer.setClearColor(0x1b1230); dieR.setClearColor(0x2a1c4a);
+
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, .72));
+  const sun = new THREE.DirectionalLight(0xffffff, .6); sun.position.set(-6, 14, 8); scene.add(sun);
+  const camera = new THREE.PerspectiveCamera(38, 1, .1, 100);
+
+  const mat = (c, o) => new THREE.MeshPhongMaterial(Object.assign({ color: c, flatShading: true, shininess: 0, specular: 0 }, o || {}));
+  const box = (w, h, d, x, y, z, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); scene.add(m); return m; };
+  const tint = c => new THREE.Color(c).lerp(new THREE.Color(0xffffff), .3);
+
+  // retro stage: fog, neon grid floor, neon trim
+  scene.fog = new THREE.Fog(0x1b1230, 38, 85);
+  const grid = new THREE.GridHelper(120, 60, 0xff4fd8, 0x4a3b8f); grid.position.y = -.6; scene.add(grid);
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(15.9, .07, 15.9), new THREE.MeshBasicMaterial({ color: 0xff4fd8 }));
+  trim.position.y = -.3; scene.add(trim);
+  // board
+  box(15.7, .5, 15.7, 0, -.25, 0, 0x0f0a1d);
+  const baseMats = [];
+  BASES.forEach(([x, y], p) => {
+    baseMats.push(box(6, .14, 6, x + 2.5 - 7, .07, y + 2.5 - 7, COL[p]).material);
+    box(4, .04, 4, x + 2.5 - 7, .16, y + 2.5 - 7, 0x1b1230);
+    SPOT.forEach(([sx, sy]) => {
+      const [rx, ry] = rot(sx, sy, p);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .04, 24), mat(COL[p]));
+      pad.position.set(rx - 7, .2, ry - 7); scene.add(pad);
+    });
+  });
+  PATH.forEach(([x, y], i) => {
+    const s = START.indexOf(i);
+    box(.92, .14, .92, x - 7, .07, y - 7, s >= 0 ? COL[s] : 0xefe6ff);
+    if ([8, 21, 34, 47].includes(i)) { const st = box(.36, .03, .36, x - 7, .155, y - 7, 0xb9a6e6); st.rotation.y = Math.PI / 4; }
+  });
+  for (let p = 0; p < 4; p++) for (let i = 0; i < 5; i++) { const [x, y] = rot(1 + i, 7, p); box(.92, .14, .92, x - 7, .07, y - 7, tint(COL[p])); }
+  const tri = (a, b, c, col) => {
+    const s = new THREE.Shape();
+    s.moveTo(a[0], -a[1]); s.lineTo(b[0], -b[1]); s.lineTo(c[0], -c[1]); s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: .14, bevelEnabled: false }); g.rotateX(-Math.PI / 2);
+    scene.add(new THREE.Mesh(g, mat(col, { side: THREE.DoubleSide })));
+  };
+  tri([-1.5,-1.5], [1.5,-1.5], [0,0], COL[1]); tri([1.5,-1.5], [1.5,1.5], [0,0], COL[2]);
+  tri([1.5,1.5], [-1.5,1.5], [0,0], COL[3]); tri([-1.5,1.5], [-1.5,-1.5], [0,0], COL[0]);
+
+  // tokens
+  const profile = [[0,0],[.36,0],[.38,.05],[.36,.1],[.24,.18],[.17,.3],[.14,.42],[.2,.5],[.24,.58],[.23,.66],[.18,.75],[.1,.82],[0,.85]].map(([x, y]) => new THREE.Vector2(x, y));
+  const pawnGeo = new THREE.LatheGeometry(profile, 28), hitGeo = new THREE.CylinderGeometry(.55, .55, 1, 6);
+  const ringGeo = new THREE.TorusGeometry(.46, .06, 8, 32), shGeo = new THREE.CylinderGeometry(.36, .36, .02, 20);
+  const tokens = [];
+  for (let p = 0; p < 4; p++) { tokens.push([]); for (let t = 0; t < 4; t++) {
+    const mt = mat(COL[p], { emissive: 0x000000, flatShading: false, shininess: 70, specular: 0x666666 });
+    const hit = new THREE.Mesh(hitGeo, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.y = .5;
+    const g = new THREE.Group(); g.add(new THREE.Mesh(pawnGeo, mt), hit); scene.add(g);
+    const sh = new THREE.Mesh(shGeo, new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: .35 })); scene.add(sh);
+    const rg = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff })); rg.rotation.x = Math.PI / 2; rg.visible = false; scene.add(rg);
+    const T = { p, t, g, mt, sh, rg, hit, x: 0, z: 0, s: 1, anim: null, mv: false };
+    T.go = (x, z, s, dur, hop) => new Promise(res => {
+      if (!dur) { T.x = x; T.z = z; T.s = s; T.anim = null; return res(); }
+      T.anim = { t0: performance.now(), dur, fx: T.x, fz: T.z, fs: T.s, tx: x, tz: z, ts: s, hop, res };
+    });
+    hit.userData.tok = T; tokens[p].push(T);
+  } }
+  const allTok = tokens.flat();
+
+  function updTokens(now){
+    allTok.forEach(T => {
+      let y = 0; const a = T.anim;
+      if (a) {
+        const u = Math.min(1, (now - a.t0) / a.dur);
+        T.x = a.fx + (a.tx - a.fx) * u; T.z = a.fz + (a.tz - a.fz) * u; T.s = a.fs + (a.ts - a.fs) * u;
+        y = a.hop * Math.sin(Math.PI * u);
+        if (u >= 1) { T.anim = null; a.res(); }
+      }
+      if (T.mv) { y += .12 + .1 * Math.sin(now / 120); T.mt.emissive.setHex(Math.sin(now / 150) > 0 ? 0x555555 : 0x222222); }
+      else T.mt.emissive.setHex(0);
+      T.g.position.set(T.x, .14 + y, T.z); T.g.scale.setScalar(T.s);
+      T.sh.position.set(T.x, .15, T.z); T.sh.scale.setScalar(T.s * (1 - .25 * Math.min(y, 1)));
+      T.rg.position.set(T.x, .18, T.z); T.rg.visible = T.mv;
+    });
+  }
+
+  // ---- camera: drag to orbit, pinch / wheel to zoom ----
+  let az = AZ[0], azT = az, el = 1.0, rad = 29;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function placeCam(){
+    camera.position.set(Math.sin(az) * Math.cos(el) * rad, Math.sin(el) * rad, Math.cos(az) * Math.cos(el) * rad);
+    camera.lookAt(0, 0, 0);
+  }
+  const wrap = $("#wrap"), cv = $("#gl");
+  function resize(){
+    const W = wrap.clientWidth, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(dpr); renderer.setSize(W, W, false);
+    dieR.setPixelRatio(dpr); dieR.setSize(76, 76, false);
+    camera.aspect = 1; camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+
+  const ptrs = new Map(); let moved = 0, downAt = 0, pd = 0;
+  const dist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  cv.addEventListener("pointerdown", e => {
+    cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = 0; downAt = performance.now(); if (ptrs.size === 2) pd = dist();
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) { az -= dx * .008; azT = az; el = clamp(el + dy * .005, .45, 1.35); moved += Math.abs(dx) + Math.abs(dy); }
+    else if (ptrs.size === 2) { const d = dist(); rad = clamp(rad * pd / d, 14, 40); pd = d; moved += 99; }
+  });
+  cv.addEventListener("pointerup", e => {
+    if (ptrs.size === 1 && moved < 8 && performance.now() - downAt < 500) pick(e);
+    ptrs.delete(e.pointerId);
+  });
+  cv.addEventListener("pointercancel", e => ptrs.delete(e.pointerId));
+  cv.addEventListener("wheel", e => { e.preventDefault(); rad = clamp(rad + e.deltaY * .02, 14, 40); }, { passive: false });
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function pick(e){
+    if (phase !== "pick" || !pickRes) return;
+    const r = cv.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hits = ray.intersectObjects(allTok.filter(T => T.mv).map(T => T.hit), false);
+    if (hits.length) pickRes(hits[0].object.userData.tok.t);
+  }
+
+  // ================= 3D DIE =================
+  const dscene = new THREE.Scene();
+  dscene.add(new THREE.AmbientLight(0xffffff, .8));
+  const dl = new THREE.DirectionalLight(0xffffff, .6); dl.position.set(2, 4, 3); dscene.add(dl);
+  const dcam = new THREE.PerspectiveCamera(35, 1, .1, 50);
+  const camDir = new THREE.Vector3(0, 1.2, 3).normalize();
+  dcam.position.copy(camDir).multiplyScalar(6.5); dcam.lookAt(0, 0, 0);
+  function face(n){
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const x = c.getContext("2d"); x.fillStyle = "#fff6e6"; x.fillRect(0, 0, 128, 128);
+    [[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]][n].forEach(i => {
+      x.fillStyle = n === 1 ? "#ff4f6d" : "#1b1230";
+      x.beginPath(); x.arc(28 + (i % 3) * 36, 28 + Math.floor(i / 3) * 36, n === 1 ? 17 : 11, 0, 7); x.fill();
+    });
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+    return new THREE.MeshPhongMaterial({ map: t, shininess: 50, specular: 0x444444 });
+  }
+  const dieGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5, 8, 8, 8);
+  (() => { // round the corners: push each vertex out from an inner box
+    const P = dieGeo.attributes.position, N = dieGeo.attributes.normal, h = .75, r = .22, v = new THREE.Vector3(), d = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) {
+      v.fromBufferAttribute(P, i);
+      const inner = new THREE.Vector3(clampN(v.x, h - r), clampN(v.y, h - r), clampN(v.z, h - r));
+      d.copy(v).sub(inner);
+      if (d.lengthSq() > 1e-8) { d.normalize(); P.setXYZ(i, inner.x + d.x * r, inner.y + d.y * r, inner.z + d.z * r); N.setXYZ(i, d.x, d.y, d.z); }
+    }
+  })();
+  function clampN(x, m){ return Math.max(-m, Math.min(m, x)); }
+  const dieMesh = new THREE.Mesh(dieGeo, [3, 4, 1, 6, 2, 5].map(face));
+  dscene.add(dieMesh);
+  const NORM = [null, [0,1,0], [0,0,1], [1,0,0], [-1,0,0], [0,0,-1], [0,-1,0]];
+  const targetQ = n => {
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(...NORM[n]), camDir);
+    return new THREE.Quaternion().setFromAxisAngle(camDir, Math.floor(Math.random() * 4) * Math.PI / 2).multiply(q);
+  };
+  dieMesh.quaternion.copy(targetQ(1));
+  let dS = { mode: "idle" };
+  function rollDie(n){
+    return new Promise(res => {
+      dS = { mode: "tumble", t0: performance.now(), n, res, w: new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize().multiplyScalar(16) };
+    });
+  }
+  function updDie(now, dt){
+    if (dS.mode === "tumble") {
+      const u = (now - dS.t0) / 700;
+      dieMesh.rotateOnWorldAxis(dS.w.clone().normalize(), dS.w.length() * dt);
+      dieMesh.position.y = Math.abs(Math.sin(Math.min(u, 1) * Math.PI * 3)) * (1 - Math.min(u, 1)) * .9;
+      if (u >= 1) dS = { mode: "settle", t0: now, from: dieMesh.quaternion.clone(), to: targetQ(dS.n), res: dS.res };
+    } else if (dS.mode === "settle") {
+      const u = Math.min(1, (now - dS.t0) / 260);
+      dieMesh.quaternion.copy(dS.from).slerp(dS.to, u); dieMesh.position.y = 0;
+      if (u >= 1) { const r = dS.res; dS = { mode: "idle" }; r(); }
+    }
+  }
+
+  // ================= GAME LOGIC =================
+  let np = 4, mode = "cpu", act, ti, pos, v = 1, phase = "over", sixes, wins = 0, losses = 0, gid = 0, vi = 0, rollRes = null, pickRes = null;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const cur = () => act[ti];
+  const isCpu = p => mode === "cpu" && p !== 0;
+  const label = p => NAMES[p] + (mode === "cpu" ? (p === 0 ? " (YOU)" : " (CPU)") : "");
+
+  const plist = $("#players"), logEl = $("#log");
+  function renderPlayers(){
+    plist.innerHTML = act.map(p => {
+      const home = pos[p].filter(q => q === 56).length, base = pos[p].filter(q => q === -1).length;
+      return '<div class="pcard c' + p + (p === cur() ? " on" : "") + '"><span class="chip c' + p + '"></span><span class="nm">' + label(p) + '</span><span class="pg">BASE ' + base + ' HOME ' + home + '/4</span></div>';
+    }).join("");
+  }
+  function logLine(p, text){
+    const d = document.createElement("div");
+    d.innerHTML = '<b class="c' + p + '">' + NAMES[p] + '</b> ' + text;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+  function logTurn(p, q, n, hit){ logLine(p, "rolled " + v + ", " + (q < 0 ? "leaves base" : n === 56 ? "reaches home" : "moves " + v) + (hit ? ", captures" : "")); }
+
+  function cellOf(p, q, t){
+    if (q < 0) return rot(SPOT[t][0], SPOT[t][1], p);
+    if (q <= 50) return PATH[(START[p] + q) % 52];
+    if (q <= 55) return rot(1 + q - 51, 7, p);
+    return rot(6, 7, p);
+  }
+  function rests(){
+    const R = {}, groups = {};
+    act.forEach(p => tokens[p].forEach(T => {
+      const q = pos[p][T.t], [cx, cy] = cellOf(p, q, T.t), r = { x: cx - 7, z: cy - 7, s: 1 };
+      R[p * 4 + T.t] = r;
+      if (q >= 0) (groups[cx + "," + cy] = groups[cx + "," + cy] || []).push(r);
+    }));
+    Object.values(groups).forEach(g => { if (g.length > 1) g.forEach((r, i) => { r.x += OFF[i % 4][0]; r.z += OFF[i % 4][1]; r.s = .72; }); });
+    return R;
+  }
+  function settle(){
+    const R = rests();
+    act.forEach(p => tokens[p].forEach(T => { if (!T.anim) { const r = R[p * 4 + T.t]; T.go(r.x, r.z, r.s, 150, 0); } }));
+  }
+  function movable(p){
+    const out = [];
+    for (let t = 0; t < 4; t++) { const q = pos[p][t]; if (q === -1 ? v === 6 : q + v <= 56) out.push(t); }
+    return out;
+  }
+  function victims(p, c){
+    const out = [];
+    if (SAFE.has(c)) return out;
+    act.forEach(o => { if (o !== p) pos[o].forEach((q, u) => { if (q >= 0 && q <= 50 && (START[o] + q) % 52 === c) out.push([o, u]); }); });
+    return out;
+  }
+  function cpuPick(p, opts){
+    let best = opts[0], bs = -1e9;
+    opts.forEach(t => {
+      const q = pos[p][t], n = q < 0 ? 0 : q + v; let s = n * .5 + Math.random();
+      if (n === 56) s += 90;
+      else if (n > 50) s += 45;
+      else {
+        const c = (START[p] + n) % 52;
+        if (q < 0) s += 60;
+        if (SAFE.has(c)) s += 25;
+        if (victims(p, c).length) s += 100;
+        if (q >= 0 && SAFE.has((START[p] + q) % 52)) s -= 10;
+      }
+      if (s > bs) { bs = s; best = t; }
+    });
+    return best;
+  }
+  function setStatus(text){
+    const p = cur(); chip.className = "chip c" + p; msg.textContent = text;
+    die.disabled = !(phase === "roll" && !isCpu(p));
+    renderPlayers();
+  }
+
+  async function doMove(p, t, g){
+    const T = tokens[p][t], q = pos[p][t], n = q < 0 ? 0 : q + v;
+    const steps = q < 0 ? [0] : Array.from({ length: n - q }, (_, i) => q + 1 + i);
+    pos[p][t] = n;
+    const hit = n <= 50 ? victims(p, (START[p] + n) % 52) : [];
+    hit.forEach(([o, u]) => pos[o][u] = -1);
+    const R = rests();
+    for (let i = 0; i < steps.length - 1; i++) {
+      const [cx, cy] = cellOf(p, steps[i], t);
+      await T.go(cx - 7, cy - 7, 1, 130, .5); beep(300 + i * 10, .04);
+      if (g !== gid) return {};
+    }
+    const r = R[p * 4 + t];
+    await Promise.all([T.go(r.x, r.z, r.s, 160, .5), ...hit.map(([o, u]) => { const b = R[o * 4 + u]; return tokens[o][u].go(b.x, b.z, b.s, 500, 2.2); })]);
+    if (g !== gid) return {};
+    beep(hit.length ? 140 : 330, hit.length ? .2 : .07);
+    settle(); logTurn(p, q, n, hit.length > 0);
+    return { hit: hit.length > 0, n };
+  }
+
+  async function run(g){
+    while (g === gid) {
+      const p = cur(); phase = "roll";
+      if (mode === "pass") azT = AZ[p];
+      setStatus(label(p) + (isCpu(p) ? " ROLLING..." : ": ROLL THE DIE"));
+      if (isCpu(p)) await sleep(700); else await new Promise(r => rollRes = r);
+      if (g !== gid) return;
+      phase = "busy"; die.disabled = true;
+      v = 1 + Math.floor(Math.random() * 6);
+      await rollDie(v); if (g !== gid) return;
+      sixes = v === 6 ? sixes + 1 : 0;
+      if (sixes === 3) { logLine(p, "rolled a third 6, turn lost"); setStatus(label(p) + ": THREE 6S, TURN LOST"); await sleep(900); if (g !== gid) return; ti = (ti + 1) % act.length; sixes = 0; continue; }
+      const opts = movable(p);
+      if (!opts.length) { logLine(p, "rolled " + v + ", no move"); setStatus(label(p) + ": NO MOVE"); await sleep(800); if (g !== gid) return; ti = (ti + 1) % act.length; sixes = 0; continue; }
+      let t;
+      if (opts.length === 1) { setStatus(label(p) + " MOVES"); await sleep(350); t = opts[0]; }
+      else if (isCpu(p)) { await sleep(500); t = cpuPick(p, opts); }
+      else {
+        phase = "pick"; opts.forEach(u => tokens[p][u].mv = true); setStatus(label(p) + ": PICK A TOKEN");
+        t = await new Promise(r => pickRes = r);
+        opts.forEach(u => tokens[p][u].mv = false);
+      }
+      if (g !== gid) return;
+      phase = "busy";
+      const res = await doMove(p, t, g); if (g !== gid) return;
+      if (pos[p].every(q => q === 56)) return win(p);
+      if (v === 6 || res.hit || res.n === 56) {
+        setStatus(label(p) + (res.hit ? ": CAPTURE! ROLL AGAIN" : res.n === 56 ? ": HOME! ROLL AGAIN" : ": SIX! ROLL AGAIN"));
+        await sleep(600); if (g !== gid) return;
+      } else { ti = (ti + 1) % act.length; sixes = 0; }
+    }
+  }
+  function win(p){
+    phase = "over"; beep(660, .3); logLine(p, "wins!");
+    if (mode === "cpu") { if (p === 0) { wins++; awardResult(true); } else { losses++; awardResult(false); }
+      $("#score").textContent = "W" + wins + " L" + losses; }
+    setStatus(p === 0 && mode === "cpu" ? "YOU WIN! +" + Shared.XP.win + " XP" : label(p) + " WINS!");
+    die.disabled = true;
+  }
+  function reset(){
+    const g = ++gid;
+    act = { 2: [0, 2], 3: [0, 1, 2], 4: [0, 1, 2, 3] }[np];
+    pos = [0, 1, 2, 3].map(() => [-1, -1, -1, -1]);
+    ti = 0; sixes = 0; vi = 0; phase = "busy"; rollRes = pickRes = null; azT = AZ[0]; logEl.innerHTML = "";
+    allTok.forEach(T => { T.mv = false; T.anim = null; T.g.visible = T.sh.visible = act.includes(T.p); });
+    baseMats.forEach((m, p) => m.color.setHex(COL[p]).multiplyScalar(act.includes(p) ? 1 : .3));
+    const R = rests();
+    act.forEach(p => tokens[p].forEach(T => { const r = R[p * 4 + T.t]; T.x = r.x; T.z = r.z; T.s = r.s; }));
+    run(g);
+  }
+
+  // ---- controls ----
+  function group(sel, fn){
+    document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      fn(b.dataset.v); reset();
+    }));
+  }
+  group("#np", x => np = +x);
+  group("#md", x => mode = x);
+  die.addEventListener("click", () => { if (phase === "roll" && !isCpu(cur()) && rollRes) { die.disabled = true; rollRes(); } });
+  $("#again").addEventListener("click", reset);
+  $("#view").addEventListener("click", () => { vi = (vi + 1) % act.length; azT = AZ[act[vi]]; });
+
+  // ---- main loop ----
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    az += Math.atan2(Math.sin(azT - az), Math.cos(azT - az)) * Math.min(1, dt * 6);
+    placeCam(); updTokens(now); updDie(now, dt);
+    const a = act[ti];
+    baseMats.forEach((m, p) => m.emissive.setHex(p === a && phase !== "over" ? (Math.sin(now / 250) > 0 ? 0x333333 : 0x111111) : 0));
+    renderer.render(scene, camera); dieR.render(dscene, dcam);
+    requestAnimationFrame(frame);
+  }
+  resize(); reset(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

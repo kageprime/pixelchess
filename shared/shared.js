@@ -4,7 +4,7 @@
 (function (g) {
   'use strict';
   const KEY = 'pixelchess.v1', SOUND = 'pixelarcade.sound';
-  const GAMES = ['chess', 'ayo', 'draughts', 'shogi', 'pool', 'scrabble'];
+  const GAMES = ['chess', 'ayo', 'draughts', 'shogi', 'pool', 'scrabble', 'connect4', 'ludo'];
   /* PLACEHOLDER rank ladder: replace the numbers and titles when the XP economy is decided */
   const RANKS = [[0, 'ROOKIE'], [100, 'CADET'], [300, 'VETERAN'], [700, 'ACE'], [1500, 'LEGEND']];
   const nn = (x, d = 0) => Number.isFinite(x) && x >= 0 ? Math.floor(x) : d;

@@ -16,9 +16,33 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231b1230'/%3E%3Crect x='2' y='2' width='12' height='12' fill='%23e8433a'/%3E%3Cpath fill='%23fff3d1' d='M5 4h5v1h1v3h-1v1H7v3H5zM7 5v3h2V5z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="shared/arcade.css">
 <style>
-:root{--star:rgba(42,29,20,.22);--vig:rgba(40,20,0,.16);--hot:#e8433a;--cool:#1c7c9b}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--star:#fff;--vig:rgba(0,0,0,.5);--hot:#ff5a4f;--cool:#4fe3ff}}
-:root[data-theme="dark"]{--star:#fff;--vig:rgba(0,0,0,.5);--hot:#ff5a4f;--cool:#4fe3ff}
+/* ==========================================================================
+   THEME DEFINITIONS:
+   1. Modern Platform (Default): Clean retro-modern slate & gold
+   2. Cartridge Console: Handheld chassis, plastic bevels, CRT display
+   3. Neon Downtown: Cyberpunk Tokyo arcade, glowing borders, neon drop-shadows
+   ========================================================================== */
+:root{--star:rgba(42,29,20,.22);--vig:rgba(40,20,0,.16);--hot:#e8433a;--cool:#1c7c9b;--gold:#ffd23f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--star:#fff;--vig:rgba(0,0,0,.5);--hot:#ff5a4f;--cool:#4fe3ff;--gold:#ffd23f}}
+:root[data-theme="dark"]{--star:#fff;--vig:rgba(0,0,0,.5);--hot:#ff5a4f;--cool:#4fe3ff;--gold:#ffd23f}
+
+/* Mode 2: Cartridge Console */
+[data-mode="cart"]{
+  --bg:#14121a;--bg2:#211d2b;--fg:#f0ebf8;--panel:#292437;--edge:#09070e;--accent:#ffd23f;--cool:#38bdf8;--hot:#f43f5e;
+}
+[data-mode="cart"] .card{border-top:8px solid var(--c);border-radius:4px 4px 0 0}
+[data-mode="cart"] .card::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;background:var(--gold);opacity:.8}
+
+/* Mode 3: Neon Downtown */
+[data-mode="neon"]{
+  --bg:#07030d;--bg2:#120722;--fg:#fdf4ff;--panel:#1c0d35;--edge:#000000;--accent:#ec4899;--cool:#06b6d4;--hot:#f43f5e;
+}
+[data-mode="neon"] .logo{text-shadow:0 0 10px #ec4899,0 0 20px #db2777,4px 4px 0 #000}
+[data-mode="neon"] .logo span{color:#06b6d4;text-shadow:0 0 10px #06b6d4,0 0 20px #0891b2,4px 4px 0 #000}
+[data-mode="neon"] .card{box-shadow:0 0 15px rgba(236,72,153,.25),inset 0 0 10px rgba(6,182,212,.15)}
+[data-mode="neon"] .card:hover{box-shadow:0 0 25px rgba(6,182,212,.6),inset 0 0 15px rgba(236,72,153,.3)}
+[data-mode="neon"] a.card.lit{box-shadow:0 0 30px rgba(236,72,153,.8),0 0 10px #fff}
+
 html{min-height:100%;scroll-behavior:smooth}
 body{min-height:100vh;min-height:100dvh;text-align:left;overflow-x:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:8;background:radial-gradient(ellipse at 50% 45%,transparent 55%,var(--vig))}
@@ -27,48 +51,64 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:8;bac
 .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(circle at 20px 30px,var(--star) 0 1px,transparent 1.5px),radial-gradient(circle at 90px 80px,var(--star) 0 1px,transparent 1.5px),radial-gradient(circle at 150px 20px,var(--star) 0 1.5px,transparent 2px),radial-gradient(circle at 60px 140px,var(--star) 0 1px,transparent 1.5px);background-size:180px 180px,230px 230px,310px 310px,140px 140px;opacity:.85;animation:drift 120s linear infinite}
 @keyframes drift{to{background-position:0 180px,0 230px,0 310px,0 140px}}
 .wrap{position:relative;z-index:1}
-/* arcade HUD */
+
+/* Top Arcade Bar & Theme Switcher */
 .hd{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;padding:14px 24px 6px;font-size:8px;line-height:1.7}
 .sc b{font-weight:400;color:var(--accent);font-size:12px;margin-left:6px}
-.sc small{font-size:8px;color:var(--hot)}
+.theme-switch{display:flex;align-items:center;gap:6px;background:var(--panel);padding:4px 8px;border:2px solid var(--edge);box-shadow:0 -2px 0 0 var(--edge),0 2px 0 0 var(--edge),-2px 0 0 0 var(--edge),2px 0 0 0 var(--edge)}
+.theme-switch button{min-height:28px;padding:4px 7px;font-size:7px;margin:0;box-shadow:none;background:transparent;color:var(--fg)}
+.theme-switch button.active{background:var(--accent);color:#fff}
 .chip{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;padding:8px 10px;margin:4px}
 .chip #cr{color:var(--accent)}
 .tick{overflow:hidden;white-space:nowrap;border-block:3px solid var(--edge);background:var(--panel);font-size:8px;line-height:28px;height:34px;margin:6px 0}
 .trk{display:inline-flex;animation:tick 38s linear infinite}
 .trk span{padding-right:0}
 @keyframes tick{to{transform:translateX(-50%)}}
-/* hero: the title screen */
-.hero{position:relative;margin:0;padding:34px 24px 0;text-align:center;overflow:hidden;min-height:470px}
-.kick{font-size:8px;line-height:2;margin:0 0 14px;color:var(--cool)}
-.logo{margin:0;line-height:1.14;font-size:clamp(30px,11.5vw,68px);text-shadow:4px 4px 0 var(--accent),8px 8px 0 var(--edge);animation:bob 2.4s steps(2) infinite}
+
+/* Hero Section */
+.hero{position:relative;margin:0;padding:26px 24px 0;text-align:center;overflow:hidden;min-height:300px}
+.kick{font-size:8px;line-height:2;margin:0 0 10px;color:var(--cool)}
+.logo{margin:0;line-height:1.14;font-size:clamp(30px,10vw,64px);text-shadow:4px 4px 0 var(--accent),8px 8px 0 var(--edge);animation:bob 2.4s steps(2) infinite}
 .logo span{display:block;color:var(--accent);text-shadow:4px 4px 0 var(--edge),8px 8px 0 var(--hot)}
 @keyframes bob{50%{transform:translateY(-4px)}}
-.tag{font-size:8px;line-height:2.1;margin:22px auto 22px;max-width:30em}
-.start{display:inline-block;font-size:clamp(12px,3.6vw,16px);padding:18px 20px;margin:6px;text-decoration:none;color:var(--fg);animation:blink 1s steps(2) infinite;cursor:pointer}
+.tag{font-size:8px;line-height:2.1;margin:16px auto;max-width:32em}
+.start{display:inline-block;font-size:clamp(12px,3.6vw,15px);padding:16px 20px;margin:4px;text-decoration:none;color:var(--fg);animation:blink 1s steps(2) infinite;cursor:pointer}
 @keyframes blink{50%{opacity:.15}}
 .start:focus-visible{outline:4px solid var(--accent);outline-offset:6px;animation:none}
 @media (hover:hover){.start:hover{background:var(--accent);color:#fff;animation:none}}
-.help{font-size:7px;line-height:2;margin:10px 0 0;opacity:.85}
-.demo{display:flex;justify-content:center;gap:clamp(10px,4vw,28px);margin:26px 0 0;position:relative;z-index:1}
-.demo svg{width:36px;height:36px;--c:var(--accent);animation:hop 1.2s steps(3) infinite}
-.demo svg:nth-child(2){animation-delay:.3s}.demo svg:nth-child(3){animation-delay:.6s}.demo svg:nth-child(4){animation-delay:.9s}
-@keyframes hop{40%{transform:translateY(-12px)}}
-/* plain class selectors: rules must match the paths inside <symbol> itself, not their <use> copies */
-.f{fill:#f5e9c8}.a{fill:var(--c,var(--accent))}.e{fill:#0b0616}
-.demo svg{background:#0b0616;padding:4px;box-sizing:content-box;box-shadow:0 0 0 3px var(--edge)}
-.city{position:absolute;left:0;right:0;bottom:0;width:100%;height:clamp(54px,13vw,130px);display:block;shape-rendering:crispEdges;z-index:0}
-.city .bld{fill:var(--edge)}.city .win{fill:#ffd23f}
-.city .w1{animation:tw 3s steps(2) infinite}.city .w2{animation:tw 4.1s steps(2) infinite 1s}.city .w3{animation:tw 5.3s steps(2) infinite .4s}
-@keyframes tw{50%{opacity:.15}}
-.fine{position:relative;z-index:1;font-size:7px;line-height:2;margin:18px 0 0;padding-bottom:clamp(60px,14vw,140px)}
-/* game select */
-.sel{max-width:1100px;margin:0 auto;padding:44px 26px 8px;scroll-margin-top:12px}
-.sec{font-size:clamp(14px,4.4vw,20px);margin:0 0 10px;color:var(--accent);text-shadow:3px 3px 0 var(--edge);display:flex;align-items:center;gap:12px}
+.help{font-size:7px;line-height:2;margin:8px 0 0;opacity:.85}
+
+/* Spotlight Hero Banner */
+.spotlight-wrap{max-width:1100px;margin:22px auto 0;padding:0 24px}
+.spotlight{padding:22px;display:grid;grid-template-columns:1fr;gap:20px;align-items:center;background:var(--panel);position:relative;overflow:hidden}
+@media (min-width:760px){.spotlight{grid-template-columns:1.3fr .7fr}}
+.spot-tag{font-size:7px;color:var(--cool);background:var(--edge);display:inline-block;padding:4px 6px;margin-bottom:10px}
+.spotlight h2{font-size:clamp(14px,3.5vw,20px);color:var(--accent);margin:0 0 10px;line-height:1.3;text-shadow:2px 2px 0 var(--edge)}
+.spotlight p{font-size:8px;line-height:2;margin:0 0 16px;text-transform:uppercase}
+.spot-action{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn-spot{display:inline-block;background:var(--ok);color:#fff;font-size:10px;padding:12px 18px;text-decoration:none;box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge),inset 0 -4px 0 0 rgba(0,0,0,.22)}
+.spot-meta{font-size:7px;color:var(--mute)}
+.spot-preview{display:grid;place-items:center;background:#0b0616;padding:22px;border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--cool);text-align:center}
+.spot-preview svg{width:72px;height:72px;margin-bottom:10px;shape-rendering:crispEdges}
+.spot-preview .stat{font-size:8px;color:var(--accent)}
+
+/* Category Filter Bar */
+.filter-bar{max-width:1100px;margin:24px auto 0;padding:0 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.filter-title{font-size:10px;color:var(--fg);margin:0}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.btn-filter{font-size:7px;padding:8px 10px;min-height:36px;margin:0;background:var(--bg2);color:var(--fg);border:0;box-shadow:0 -2px 0 0 var(--edge),0 2px 0 0 var(--edge),-2px 0 0 0 var(--edge),2px 0 0 0 var(--edge);cursor:pointer}
+.btn-filter.active{background:var(--accent);color:#fff}
+
+/* Game Catalog Grid */
+.sel{max-width:1100px;margin:16px auto 0;padding:16px 26px 8px;scroll-margin-top:12px}
+.sec{font-size:clamp(13px,4vw,18px);margin:0 0 8px;color:var(--accent);text-shadow:3px 3px 0 var(--edge);display:flex;align-items:center;gap:12px}
 .sec .blk{width:.8em;height:1em;background:var(--accent);box-shadow:none;animation:blink 1s steps(2) infinite}
 .sub{font-size:8px;line-height:2;margin:0 0 22px}
 .grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:26px}
 @media (min-width:600px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1000px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Game Cards */
 .card{position:relative;display:flex;gap:14px;align-items:center;height:100%;min-height:132px;padding:16px 14px 16px 22px;color:var(--fg);text-decoration:none;cursor:pointer;--c:var(--accent)}
 .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--c)}
 .scr{flex:none;width:92px;height:92px;display:grid;place-items:center;background:#0b0616;box-shadow:inset 0 0 0 3px var(--c),0 0 0 3px var(--edge);position:relative;overflow:hidden}
@@ -97,7 +137,8 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
 .hint{margin:26px 0 0;min-height:4.2em;font-size:8px;line-height:2.1;padding:12px 14px}
 .hint b{color:var(--accent);font-weight:400}
 @media (hover:none){.hint{display:none}}
-/* player card and how it works */
+
+/* Player Dossier / Stats */
 .info{max-width:1100px;margin:0 auto;padding:40px 26px 8px;display:grid;grid-template-columns:1fr;gap:26px}
 @media (min-width:800px){.info{grid-template-columns:1fr 1fr}}
 .pnl{padding:18px 16px}
@@ -115,44 +156,198 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
 :root[data-theme="dark"] .steps b{color:#1b1230}
 .ft{display:flex;flex-wrap:wrap;gap:14px 22px;justify-content:center;align-items:center;max-width:1100px;margin:0 auto;padding:36px 24px 30px;font-size:8px;line-height:1.8;text-align:center}
 .ft button{margin:0}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.f{fill:#f5e9c8}.a{fill:var(--c,var(--accent))}.e{fill:#0b0616}
 @media (prefers-reduced-motion:reduce){.trk{white-space:normal;justify-content:center;text-align:center;display:block}.trk span+span{display:none}.tick{height:auto;line-height:1.9;padding:6px 10px;white-space:normal}}
 </style>
 </head>
-<body>
+<body data-mode="plat">
 <a class="skip" href="#select">Skip to the games</a>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-chess" viewBox="0 0 16 16"><path class="f" d="M6 2h4v4h-4zM7 6h2v1h-2zM5 7h6v1h-6zM6 8h4v3h-4zM4 11h8v2h-8zM3 13h10v2h-10z"/><path class="e" d="M7 3h1v2h-1z"/><path class="a" d="M3 14h10v1h-10z"/></symbol><symbol id="i-ayo" viewBox="0 0 16 16"><path class="f" d="M1 3h14v10h-14z"/><path class="e" d="M2 4h3v3h-3zM6 4h3v3h-3zM10 4h3v3h-3zM2 9h3v3h-3zM6 9h3v3h-3zM10 9h3v3h-3z"/><path class="a" d="M3 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM3 10h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1z"/></symbol><symbol id="i-draughts" viewBox="0 0 16 16"><path class="a" d="M9 1h4v1h-4zM8 2h6v1h-6zM7 3h8v4h-8zM8 7h6v1h-6zM9 8h4v1h-4z"/><path class="e" d="M10 4h2v2h-2z"/><path class="f" d="M3 7h4v1h-4zM2 8h6v1h-6zM1 9h8v4h-8zM2 13h6v1h-6zM3 14h4v1h-4z"/><path class="e" d="M4 10h2v2h-2z"/></symbol><symbol id="i-shogi" viewBox="0 0 16 16"><path class="f" d="M7 1h2v1h-2zM6 2h4v1h-4zM5 3h6v1h-6zM4 4h8v1h-8zM3 5h10v10h-10z"/><path class="a" d="M7 7h2v6h-2zM5 9h6v1h-6z"/></symbol><symbol id="i-pool" viewBox="0 0 16 16"><path class="a" d="M6 2h4v1h-4zM4 3h8v1h-8zM3 4h10v1h-10zM2 5h12v6h-12zM3 11h10v1h-10zM4 12h8v1h-8zM6 13h4v1h-4z"/><path class="f" d="M6 6h4v4h-4z"/><path class="e" d="M7 7h2v2h-2z"/></symbol><symbol id="i-scrabble" viewBox="0 0 16 16"><path class="f" d="M2 2h12v12h-12z"/><path class="e" d="M6 4h4v1h-4zM5 5h2v6h-2zM9 5h2v6h-2zM6 8h4v1h-4z"/><path class="a" d="M4 12h8v1h-8z"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-chess" viewBox="0 0 16 16"><path class="f" d="M6 2h4v4h-4zM7 6h2v1h-2zM5 7h6v1h-6zM6 8h4v3h-4zM4 11h8v2h-8zM3 13h10v2h-10z"/><path class="e" d="M7 3h1v2h-1z"/><path class="a" d="M3 14h10v1h-10z"/></symbol>
+<symbol id="i-ayo" viewBox="0 0 16 16"><path class="f" d="M1 3h14v10h-14z"/><path class="e" d="M2 4h3v3h-3zM6 4h3v3h-3zM10 4h3v3h-3zM2 9h3v3h-3zM6 9h3v3h-3zM10 9h3v3h-3z"/><path class="a" d="M3 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM3 10h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1z"/></symbol>
+<symbol id="i-draughts" viewBox="0 0 16 16"><path class="a" d="M9 1h4v1h-4zM8 2h6v1h-6zM7 3h8v4h-8zM8 7h6v1h-6zM9 8h4v1h-4z"/><path class="e" d="M10 4h2v2h-2z"/><path class="f" d="M3 7h4v1h-4zM2 8h6v1h-6zM1 9h8v4h-8zM2 13h6v1h-6zM3 14h4v1h-4z"/><path class="e" d="M4 10h2v2h-2z"/></symbol>
+<symbol id="i-shogi" viewBox="0 0 16 16"><path class="f" d="M7 1h2v1h-2zM6 2h4v1h-4zM5 3h6v1h-6zM4 4h8v1h-8zM3 5h10v10h-10z"/><path class="a" d="M7 7h2v6h-2zM5 9h6v1h-6z"/></symbol>
+<symbol id="i-pool" viewBox="0 0 16 16"><path class="a" d="M6 2h4v1h-4zM4 3h8v1h-8zM3 4h10v1h-10zM2 5h12v6h-12zM3 11h10v1h-10zM4 12h8v1h-8zM6 13h4v1h-4z"/><path class="f" d="M6 6h4v4h-4z"/><path class="e" d="M7 7h2v2h-2z"/></symbol>
+<symbol id="i-scrabble" viewBox="0 0 16 16"><path class="f" d="M2 2h12v12h-12z"/><path class="e" d="M6 4h4v1h-4zM5 5h2v6h-2zM9 5h2v6h-2zM6 8h4v1h-4z"/><path class="a" d="M4 12h8v1h-8z"/></symbol>
+<symbol id="i-connect4" viewBox="0 0 16 16"><path class="f" d="M2 2h12v12h-12z"/><path class="e" d="M4 4h2v2h-2zM7 4h2v2h-2zM10 4h2v2h-2zM4 7h2v2h-2zM7 7h2v2h-2zM10 7h2v2h-2zM4 10h2v2h-2zM7 10h2v2h-2zM10 10h2v2h-2z"/><path class="a" d="M4 10h2v2h-2zM10 4h2v2h-2z"/></symbol>
+<symbol id="i-ludo" viewBox="0 0 16 16"><path class="f" d="M3 3h10v10h-10z"/><path class="e" d="M5 5h2v2h-2zM9 5h2v2h-2zM5 9h2v2h-2zM9 9h2v2h-2z"/><path class="a" d="M5 5h2v2h-2zM9 9h2v2h-2z"/></symbol>
+</svg>
 <div class="sky" aria-hidden="true"></div>
 <div class="wrap">
+
+<!-- ARCADE HUD WITH THEME SWITCHER -->
 <header class="hd">
  <div class="sc">1UP<b id="score">000000</b></div>
+
+ <!-- THEME PRESET SWITCHER -->
+ <div class="theme-switch" role="group" aria-label="Visual Theme Presets">
+  <button type="button" id="thm-plat" class="active">PLATFORM</button>
+  <button type="button" id="thm-cart">CARTRIDGE</button>
+  <button type="button" id="thm-neon">NEON</button>
+ </div>
+
  <div class="chip px" id="chip" role="group" aria-label="Your profile"><span id="cn">PLAYER</span><span id="ci">YOU</span><span id="cr">ROOKIE</span><span id="cx">XP 0</span></div>
 </header>
-<div class="tick" aria-hidden="true"><div class="trk"><span>&#9733; NEW: PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: AYO &middot; DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; &#9733; NEW: PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: AYO &middot; DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; </span><span>&#9733; NEW: PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: AYO &middot; DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; &#9733; NEW: PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: AYO &middot; DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; </span></div></div>
+
+<div class="tick" aria-hidden="true">
+ <div class="trk">
+  <span>&#9733; NEW: AYO &#9733; CONNECT 4 &#9733; LUDO &#9733; PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; </span>
+  <span>&#9733; NEW: AYO &#9733; CONNECT 4 &#9733; LUDO &#9733; PIXEL POOL 3D &#9733; PIXEL SCRABBLE &#9733; COMING SOON: DRAUGHTS &middot; SHOGI &#9733; FREE PLAY &#9733; WORKS OFFLINE &#9733; </span>
+ </div>
+</div>
+
 <main id="top">
+
+<!-- HERO -->
 <section class="hero" aria-labelledby="logo">
  <p class="kick">&#9733; WELCOME TO THE &#9733;</p>
  <h1 class="logo" id="logo">PIXEL<span>ARCADE</span></h1>
- <p class="tag">BOARD AND TABLE GAMES IN CHUNKY PIXELS. FREE PLAY, ON YOUR PHONE OR DESKTOP.</p>
+ <p class="tag">RETRO TABLETOP & STRATEGY GAMES IN CHUNKY PIXELS. FREE PLAY, NO DOWNLOADS.</p>
  <a class="start px" id="start" href="#select">PRESS START</a>
  <p class="help">TAP, CLICK OR PRESS ENTER</p>
- <div class="demo" aria-hidden="true"><svg viewBox="0 0 16 16" style="--c:#e8433a"><use href="#i-chess"/></svg><svg viewBox="0 0 16 16" style="--c:#1fb5d4"><use href="#i-pool"/></svg><svg viewBox="0 0 16 16" style="--c:#f2c230"><use href="#i-scrabble"/></svg><svg viewBox="0 0 16 16" style="--c:#2fae63"><use href="#i-draughts"/></svg></div>
- <p class="fine">&copy; 2026 PIXEL ARCADE &middot; 1 OR 2 PLAYERS</p>
- <svg class="city" viewBox="0 0 320 48" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><g class="bld"><rect x="0" y="28" width="24" height="20"/><rect x="24" y="28" width="16" height="20"/><rect x="40" y="16" width="24" height="32"/><rect x="64" y="22" width="24" height="26"/><rect x="88" y="8" width="16" height="40"/><rect x="104" y="22" width="32" height="26"/><rect x="136" y="28" width="32" height="20"/><rect x="168" y="16" width="32" height="32"/><rect x="200" y="8" width="16" height="40"/><rect x="216" y="28" width="24" height="20"/><rect x="240" y="22" width="16" height="26"/><rect x="256" y="34" width="16" height="14"/><rect x="272" y="16" width="16" height="32"/><rect x="288" y="16" width="32" height="32"/></g><g class="win"><rect class="w3" x="9" y="32" width="2" height="2"/><rect class="w3" x="15" y="32" width="2" height="2"/><rect class="w3" x="3" y="38" width="2" height="2"/><rect class="w1" x="9" y="38" width="2" height="2"/><rect class="w1" x="3" y="44" width="2" height="2"/><rect class="w3" x="15" y="44" width="2" height="2"/><rect class="w3" x="27" y="38" width="2" height="2"/><rect class="w1" x="33" y="44" width="2" height="2"/><rect class="w1" x="43" y="20" width="2" height="2"/><rect class="w3" x="49" y="26" width="2" height="2"/><rect class="w1" x="55" y="32" width="2" height="2"/><rect class="w1" x="67" y="26" width="2" height="2"/><rect class="w3" x="79" y="26" width="2" height="2"/><rect class="w2" x="67" y="32" width="2" height="2"/><rect class="w1" x="67" y="38" width="2" height="2"/><rect class="w2" x="73" y="38" width="2" height="2"/><rect class="w2" x="79" y="38" width="2" height="2"/><rect class="w2" x="67" y="44" width="2" height="2"/><rect class="w3" x="91" y="18" width="2" height="2"/><rect class="w1" x="91" y="30" width="2" height="2"/><rect class="w3" x="91" y="42" width="2" height="2"/><rect class="w3" x="97" y="42" width="2" height="2"/><rect class="w2" x="119" y="32" width="2" height="2"/><rect class="w1" x="125" y="32" width="2" height="2"/><rect class="w2" x="119" y="38" width="2" height="2"/><rect class="w2" x="119" y="44" width="2" height="2"/><rect class="w1" x="139" y="32" width="2" height="2"/><rect class="w3" x="145" y="32" width="2" height="2"/><rect class="w2" x="151" y="32" width="2" height="2"/><rect class="w2" x="163" y="32" width="2" height="2"/><rect class="w2" x="139" y="38" width="2" height="2"/><rect class="w1" x="157" y="38" width="2" height="2"/><rect class="w3" x="157" y="44" width="2" height="2"/><rect class="w3" x="177" y="20" width="2" height="2"/><rect class="w1" x="189" y="20" width="2" height="2"/><rect class="w3" x="171" y="26" width="2" height="2"/><rect class="w1" x="177" y="26" width="2" height="2"/><rect class="w1" x="177" y="32" width="2" height="2"/><rect class="w2" x="189" y="32" width="2" height="2"/><rect class="w2" x="183" y="38" width="2" height="2"/><rect class="w1" x="177" y="44" width="2" height="2"/><rect class="w3" x="203" y="12" width="2" height="2"/><rect class="w3" x="209" y="24" width="2" height="2"/><rect class="w2" x="203" y="36" width="2" height="2"/><rect class="w3" x="209" y="42" width="2" height="2"/><rect class="w1" x="219" y="38" width="2" height="2"/><rect class="w3" x="219" y="44" width="2" height="2"/><rect class="w3" x="249" y="26" width="2" height="2"/><rect class="w1" x="259" y="38" width="2" height="2"/><rect class="w2" x="265" y="38" width="2" height="2"/><rect class="w2" x="275" y="32" width="2" height="2"/><rect class="w3" x="275" y="44" width="2" height="2"/><rect class="w3" x="281" y="44" width="2" height="2"/><rect class="w1" x="309" y="20" width="2" height="2"/><rect class="w3" x="315" y="20" width="2" height="2"/><rect class="w3" x="303" y="26" width="2" height="2"/><rect class="w1" x="303" y="32" width="2" height="2"/><rect class="w3" x="291" y="38" width="2" height="2"/><rect class="w2" x="291" y="44" width="2" height="2"/><rect class="w3" x="297" y="44" width="2" height="2"/><rect class="w3" x="303" y="44" width="2" height="2"/><rect class="w3" x="309" y="44" width="2" height="2"/></g></svg>
 </section>
+
+<!-- FEATURED SPOTLIGHT -->
+<section class="spotlight-wrap" aria-label="Featured Game">
+ <div class="spotlight px">
+  <div>
+   <span class="spot-tag">&#9733; SPOTLIGHT TITLE</span>
+   <h2>PIXIE POOL 3D</h2>
+   <p>Real-time 3D ball physics on felt. Chalk dust, cue stick english, solids vs stripes, and an AI Pixie rival.</p>
+   <div class="spot-action">
+    <a class="btn-spot" href="pool/index.html">► PLAY NOW</a>
+    <span class="spot-meta">● 1-2 PLAYERS · 3D WEBGL</span>
+   </div>
+  </div>
+  <div class="spot-preview">
+   <svg viewBox="0 0 16 16" style="--c:#1fb5d4"><use href="#i-pool"/></svg>
+   <div class="stat" id="spot-stat">BEST STREAK: 0</div>
+  </div>
+ </div>
+</section>
+
+<!-- FILTER CONTROLS BAR -->
+<div class="filter-bar">
+ <h3 class="filter-title">CATALOG (8)</h3>
+ <div class="filters">
+  <button class="btn-filter active" id="f-all" type="button">ALL</button>
+  <button class="btn-filter" id="f-ready" type="button">READY (6)</button>
+  <button class="btn-filter" id="f-soon" type="button">SOON (2)</button>
+ </div>
+</div>
+
+<!-- GAME SELECT GRID -->
 <section class="sel" id="select" aria-labelledby="selh">
  <h2 class="sec" id="selh"><span class="blk" aria-hidden="true"></span>SELECT GAME</h2>
  <p class="sub">TAP A CABINET TO PLAY. MORE ARE COMING.</p>
  <ul class="grid" id="grid" aria-label="Games">
-  <li><a class="card px lit" href="chess/index.html" data-game="chess" style="--c:#e8433a"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-chess"/></svg></span><span class="tx"><span class="meta"><i class="num">01</i><i class="pp">1-2P</i></span><h2>CHESS</h2><p>Climb the ladder against three rivals.</p><span class="bd ok">PLAYABLE</span><span class="best" id="best-chess">NO GAMES YET</span></span></a></li>
-  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="ayo" style="--c:#f2a33a"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-ayo"/></svg></span><span class="tx"><span class="meta"><i class="num">02</i></span><h2>AYO</h2><p>Sow seeds and capture pits.</p><span class="bd">SOON</span></span></a></li>
-  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="draughts" style="--c:#2fae63"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-draughts"/></svg></span><span class="tx"><span class="meta"><i class="num">03</i></span><h2>DRAUGHTS</h2><p>Jump, capture and get crowned.</p><span class="bd">SOON</span></span></a></li>
-  <li><a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="shogi" style="--c:#8b6cff"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-shogi"/></svg></span><span class="tx"><span class="meta"><i class="num">04</i></span><h2>SHOGI</h2><p>Japanese chess with piece drops.</p><span class="bd">SOON</span></span></a></li>
-  <li><a class="card px" href="pool/index.html" data-game="pool" style="--c:#1fb5d4"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-pool"/></svg></span><span class="tx"><span class="meta"><i class="num">05</i><i class="pp">1-2P</i></span><h2>POOL</h2><p>Pixel 3D 8-ball against a CPU rival.</p><span class="bd ok">PLAYABLE</span><span class="new">NEW</span><span class="best" id="best-pool">NO GAMES YET</span></span></a></li>
-  <li><a class="card px" href="scrabble/index.html" data-game="scrabble" style="--c:#f2c230"><span class="cur" aria-hidden="true"></span><span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-scrabble"/></svg></span><span class="tx"><span class="meta"><i class="num">06</i><i class="pp">2P</i></span><h2>SCRABBLE</h2><p>Spell big on the bonus squares.</p><span class="bd ok">PLAYABLE</span><span class="new">NEW</span><span class="best" id="best-scrabble">NO GAMES YET</span></span></a></li>
+  <li data-status="ready">
+   <a class="card px lit" href="chess/index.html" data-game="chess" style="--c:#e8433a">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-chess"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">01</i><i class="pp">1-2P</i></span>
+     <h2>CHESS</h2>
+     <p>Climb the ladder against three rivals.</p>
+     <span class="bd ok">PLAYABLE</span>
+     <span class="best" id="best-chess">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="ready">
+   <a class="card px" href="ayo/index.html" data-game="ayo" style="--c:#f2a33a">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-ayo"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">02</i><i class="pp">1-2P</i></span>
+     <h2>AYO</h2>
+     <p>Sow seeds and capture pits.</p>
+     <span class="bd ok">PLAYABLE</span><span class="new">NEW</span>
+     <span class="best" id="best-ayo">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="soon">
+   <a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="draughts" style="--c:#2fae63">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-draughts"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">03</i></span>
+     <h2>DRAUGHTS</h2>
+     <p>Jump, capture and get crowned.</p>
+     <span class="bd">SOON</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="soon">
+   <a class="card px soon" role="link" aria-disabled="true" tabindex="0" data-game="shogi" style="--c:#8b6cff">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-shogi"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">04</i></span>
+     <h2>SHOGI</h2>
+     <p>Japanese chess with piece drops.</p>
+     <span class="bd">SOON</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="ready">
+   <a class="card px" href="pool/index.html" data-game="pool" style="--c:#1fb5d4">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-pool"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">05</i><i class="pp">1-2P</i></span>
+     <h2>POOL</h2>
+     <p>Pixel 3D 8-ball against a CPU rival.</p>
+     <span class="bd ok">PLAYABLE</span><span class="new">NEW</span>
+     <span class="best" id="best-pool">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="ready">
+   <a class="card px" href="scrabble/index.html" data-game="scrabble" style="--c:#f2c230">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-scrabble"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">06</i><i class="pp">2P</i></span>
+     <h2>SCRABBLE</h2>
+     <p>Spell big on the bonus squares.</p>
+     <span class="bd ok">PLAYABLE</span><span class="new">NEW</span>
+     <span class="best" id="best-scrabble">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="ready">
+   <a class="card px" href="connect4/index.html" data-game="connect4" style="--c:#ff4f6d">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-connect4"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">07</i><i class="pp">1-2P</i></span>
+     <h2>CONNECT 4</h2>
+     <p>Drop discs and connect four to win.</p>
+     <span class="bd ok">PLAYABLE</span><span class="new">NEW</span>
+     <span class="best" id="best-connect4">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
+  <li data-status="ready">
+   <a class="card px" href="ludo/index.html" data-game="ludo" style="--c:#3ddc84">
+    <span class="cur" aria-hidden="true"></span>
+    <span class="scr"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-ludo"/></svg></span>
+    <span class="tx">
+     <span class="meta"><i class="num">08</i><i class="pp">1-4P</i></span>
+     <h2>LUDO</h2>
+     <p>Race tokens home and capture rivals.</p>
+     <span class="bd ok">PLAYABLE</span><span class="new">NEW</span>
+     <span class="best" id="best-ludo">NO GAMES YET</span>
+    </span>
+   </a>
+  </li>
  </ul>
  <p class="hint px" id="hint" aria-live="polite"></p>
 </section>
+
+<!-- PLAYER PROFILE & RULES -->
 <section class="info" aria-label="Your progress and how it works">
  <div class="pnl px">
   <h2>PLAYER 1</h2>
@@ -168,20 +363,23 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
  </div>
 </section>
 </main>
+
 <footer class="ft">
- <span>V1.2.0</span>
+ <span>V2.1.0</span>
  <button class="sm" id="snd" type="button" aria-pressed="true">SOUND: ON</button>
  <span>BY KAGEPRIME</span>
  <span class="tagline">WUSE TO BERGER. PLAY SOMETHING.</span>
  <span class="hint">↑↓ SELECT · ENTER OPEN</span>
 </footer>
 </div>
+
 <script src="shared/shared.js"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id),S=window.Shared,pad=n=>String(n).padStart(6,'0');
  const mkIni=n=>{n=String(n||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();if(!n)return'YOU';let s=n.split(/\s+/).map(w=>w[0]).join('');const w0=s;if(s.length<3){const f=n.replace(/\s+/g,'');for(const ch of f){if(s.length>=3)break;if(!s.includes(ch))s+=ch}while(s.length<3)s+=w0[s.length%w0.length]}return s.slice(0,3)};
  const cards=[...document.querySelectorAll('a.card')],grid=$('grid'),hint=$('hint'),calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+
  function paint(){
   const p=S.profile(),r=p.rank;
   $('cn').textContent=p.name;$('ci').textContent=mkIni(p.name);$('cr').textContent=r.title;$('cx').textContent='XP '+p.xp;
@@ -193,21 +391,37 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
   $('best-chess').textContent=p.chess.played?'STREAK '+p.chess.streak+' \u00b7 BEST '+p.chess.best:'NO GAMES YET';
   const pl=p.games.pool;$('best-pool').textContent=pl.played?'STREAK '+pl.streak+' \u00b7 BEST '+pl.best:'NO GAMES YET';
   const sw=p.games.scrabble;$('best-scrabble').textContent=sw.played?'STREAK '+sw.streak+' \u00b7 BEST '+sw.best:'NO GAMES YET';
+  const ay=p.games.ayo;$('best-ayo').textContent=ay.played?'STREAK '+ay.streak+' \u00b7 BEST '+ay.best:'NO GAMES YET';
+  const c4=p.games.connect4;$('best-connect4').textContent=c4.played?'STREAK '+c4.streak+' \u00b7 BEST '+c4.best:'NO GAMES YET';
+  const lu=p.games.ludo;$('best-ludo').textContent=lu.played?'STREAK '+lu.streak+' \u00b7 BEST '+lu.best:'NO GAMES YET';
+  $('spot-stat').textContent=pl.played?'BEST STREAK: '+pl.best:'NO GAMES YET';
   const on2=S.sound.get();$('snd').textContent='SOUND: '+(on2?'ON':'OFF');$('snd').setAttribute('aria-pressed',on2);
  }
  paint();addEventListener('shared:profile',paint);addEventListener('pageshow',paint);
  $('snd').addEventListener('click',()=>{S.sound.toggle();paint();S.blip(880)});
- /* the hint line works like the old menus: it describes whatever the cursor is on */
+
  const idle='USE THE ARROW KEYS TO MOVE, ENTER TO START.';
- function describe(c){if(!c){hint.textContent=idle;return}
+ function describe(c){
+  if(!c){hint.textContent=idle;return}
   const soon=c.classList.contains('soon'),n=c.querySelector('h2').textContent,t=c.querySelector('p').textContent;
-  hint.innerHTML='<b>&#9654; '+n+'</b> '+t+' '+(soon?'COMING SOON.':'PRESS ENTER TO START.')}
+  hint.innerHTML='<b>&#9654; '+n+'</b> '+t+' '+(soon?'COMING SOON.':'PRESS ENTER TO START.');
+ }
  describe(null);
- grid.addEventListener('focusin',e=>describe(e.target.closest('a.card')));
+
+ grid.addEventListener('focusin',e=>{
+  const c=e.target.closest('a.card');
+  if(c){cards.forEach(x=>x.classList.remove('lit'));c.classList.add('lit');describe(c);}
+ });
  grid.addEventListener('focusout',()=>describe(null));
- /* only a real mouse movement counts: a card scrolling under a parked pointer must not steal the hint from the cursor */
- grid.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&(e.movementX||e.movementY))describe(e.target.closest('a.card'))});
+
+ grid.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse'&&(e.movementX||e.movementY)){
+   const c=e.target.closest('a.card');
+   if(c){cards.forEach(x=>x.classList.remove('lit'));c.classList.add('lit');describe(c);}
+  }
+ });
  grid.addEventListener('pointerleave',()=>describe(grid.contains(document.activeElement)?document.activeElement.closest('a.card'):null));
+
  const cols=()=>getComputedStyle(grid).gridTemplateColumns.split(' ').length;
  function start(e){
   if(e)e.preventDefault();S.blip(880);
@@ -215,18 +429,65 @@ a.card.lit{box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 va
   setTimeout(()=>cards[0].focus({preventScroll:true}),calm?0:450);
  }
  $('start').addEventListener('click',start);
+
  addEventListener('keydown',e=>{
   const i=cards.indexOf(document.activeElement);
   if(i<0){if((e.key==='Enter'||e.key===' ')&&document.activeElement===document.body){start(e)}return}
   const c=cols();let n=i;
   if(e.key==='ArrowRight')n=i+1;else if(e.key==='ArrowLeft')n=i-1;else if(e.key==='ArrowDown')n=i+c;else if(e.key==='ArrowUp')n=i-c;else return;
   e.preventDefault();if(n<0||n>=cards.length||n===i)return;
-  cards[n].focus();S.blip(440+n*60);
+  cards.forEach(x=>x.classList.remove('lit'));
+  cards[n].classList.add('lit');
+  cards[n].focus();
+  describe(cards[n]);
+  S.blip(440+n*60);
  });
+
  cards.forEach(a=>{
-  a.addEventListener('click',e=>{if(a.classList.contains('soon')){e.preventDefault();return}S.blip(660)});
+  a.addEventListener('click',e=>{
+   if(a.classList.contains('soon')){e.preventDefault();return}
+   S.blip(660);
+  });
   a.addEventListener('keydown',e=>{if(a.classList.contains('soon')&&(e.key==='Enter'||e.key===' '))e.preventDefault()});
  });
+
+ // Catalog Filters
+ const filterBtns=[$('f-all'),$('f-ready'),$('f-soon')];
+ const filterItems=[...grid.querySelectorAll('li')];
+ filterBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   filterBtns.forEach(b=>b.classList.remove('active'));
+   btn.classList.add('active');
+   S.blip(580);
+   const f=btn.id.replace('f-','');
+   filterItems.forEach(li=>{
+    if(f==='all')li.style.display='';
+    else if(f==='ready')li.style.display=li.dataset.status==='ready'?'':'none';
+    else if(f==='soon')li.style.display=li.dataset.status==='soon'?'':'none';
+   });
+  });
+ });
+
+ // Theme Mode Switcher (PLATFORM / CARTRIDGE / NEON)
+ const modes = ['plat', 'cart', 'neon'];
+ const themeBtns = { plat: $('thm-plat'), cart: $('thm-cart'), neon: $('thm-neon') };
+ function setMode(m){
+  if(!modes.includes(m)) m = 'plat';
+  document.body.dataset.mode = m;
+  Object.keys(themeBtns).forEach(k => themeBtns[k].classList.toggle('active', k === m));
+  try { localStorage.setItem('pixelarcade.theme_mode', m); } catch(e){}
+ }
+ Object.keys(themeBtns).forEach(k => {
+  themeBtns[k].addEventListener('click', () => {
+   setMode(k);
+   S.blip(740);
+  });
+ });
+ try {
+  const savedMode = localStorage.getItem('pixelarcade.theme_mode');
+  if(savedMode) setMode(savedMode);
+ } catch(e){}
+
  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 })();
 </script>

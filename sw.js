@@ -1,7 +1,7 @@
 /* Pixel Arcade service worker: precaches the hub, shared files and shipped games so the arcade works offline.
    Add each game's /<game>/index.html to PRECACHE as it ships, and bump CACHE so old copies are dropped. */
-const CACHE = 'pixel-arcade-v4';
-const PRECACHE = ['./', 'index.html', 'chess/index.html', 'pool/index.html', 'scrabble/index.html', 'scrabble/words.txt', 'shared/arcade.css', 'shared/shared.js', 'shared/vendor/PressStart2P-Regular.woff2'];
+const CACHE = 'pixel-arcade-v5';
+const PRECACHE = ['./', 'index.html', 'chess/index.html', 'pool/index.html', 'scrabble/index.html', 'scrabble/words.txt', 'ayo/index.html', 'connect4/index.html', 'ludo/index.html', 'shared/arcade.css', 'shared/shared.js', 'shared/vendor/three.min.js', 'shared/vendor/PressStart2P-Regular.woff2'];
 
 /* a redirected response cannot be served to a navigation, so rebuild it as a plain one */
 async function clean(res) {

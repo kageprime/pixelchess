@@ -9,3 +9,7 @@ PressStart2P-Regular.woff2   (NOT included yet, add it here)
   Until the file is added the arcade falls back to a system monospace font and the browser logs one 404 for it.
 
 planck.js   (for the pool game, add under /shared/vendor/planck/ with its MIT LICENSE file)
+
+three.min.js   r128, MIT licence (see the header in the file).
+  Three.js by the Three.js authors, https://github.com/mrdoob/three.js (r128 via cdnjs).
+  Used by the Ayo and Ludo 3D boards; vendored so they work offline.

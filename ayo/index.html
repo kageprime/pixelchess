@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1230">
+<title>Ayo 3D | Pixel Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+:root{
+  --bg:#1b1230; --panel:#2a1c4a; --edge:#0f0a1d; --text:#f3ecff; --dim:#9d8cc4;
+  --red:#ff4f6d; --yel:#ffd23f; --blu:#4aa8ff; --pink:#ff4fd8;
+  --px:"Press Start 2P",ui-monospace,"Courier New",monospace;
+  box-sizing:border-box;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--px);min-height:100%}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:18px 14px;font-size:10px;line-height:1.7}
+a{color:var(--dim);text-decoration:none}
+a:hover,a:focus-visible{color:var(--yel)}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+h1{font-size:14px;margin:0;color:var(--yel);text-shadow:2px 2px 0 var(--edge)}
+.score{color:var(--dim)}
+
+/* two-pane layout */
+.app{--bw:min(calc(100vw - 440px),900px);display:flex;gap:20px;align-items:stretch;justify-content:center;width:100%;max-width:1320px}
+.stage{flex:none;width:max(340px,var(--bw));display:flex;align-items:center}
+.side{flex:0 0 360px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pcard{--c:var(--blu);display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel);border:3px solid var(--edge);border-left:8px solid var(--c);opacity:.65}
+.pcard.on{opacity:1;box-shadow:0 0 0 2px var(--c)}
+.pcard.a{--c:var(--blu)}.pcard.b{--c:var(--red)}
+.pcard .chip{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
+.pcard .nm{flex:1}
+.pcard .pg{color:var(--dim);font-size:8px}
+#status{min-height:36px;display:flex;align-items:center;background:var(--panel);border:3px solid var(--edge);padding:8px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;background:var(--yel);color:var(--edge);border:3px solid var(--edge);padding:10px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--edge)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+.log{flex:1;min-height:100px;overflow:auto;background:var(--panel);border:3px solid var(--edge);padding:8px 10px;font-size:8px;line-height:2.1}
+.log b.a{color:var(--blu)}.log b.b{color:var(--red)}
+.log:empty::before{content:"MOVES APPEAR HERE";color:var(--dim)}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:flex;border:3px solid var(--edge);background:var(--panel)}
+.seg[hidden]{display:none}
+.seg button{font:inherit;color:var(--dim);background:none;border:0;padding:8px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--yel);color:var(--edge)}
+small{color:var(--dim);font-size:8px;line-height:1.9}
+
+/* 3D view */
+#wrap{position:relative;width:100%;aspect-ratio:16/10;background:var(--bg);border:4px solid var(--edge);border-radius:18px;
+  box-shadow:0 0 0 3px var(--pink),0 0 30px rgba(255,79,216,.4),8px 8px 0 var(--edge);overflow:hidden}
+#wrap::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
+#gl{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+
+@media (max-width:900px){
+  body{align-items:flex-start}
+  .app{flex-direction:column;align-items:center}
+  .stage{width:min(100%,680px)}
+  .side{flex:none;width:min(100%,680px)}
+  .log{flex:none;max-height:150px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="stage"><div id="wrap"><canvas id="gl" aria-label="Ayo board"></canvas></div></section>
+  <aside class="side">
+    <header class="top"><a href="../index.html">&lt; LOBBY</a><h1>AYO 3D</h1><span class="score" id="score">W0 L0</span></header>
+    <div class="plist" id="players"></div>
+    <div id="status" role="status" aria-live="polite">LOADING 3D...</div>
+    <div class="controls">
+      <button class="btn" id="again">NEW GAME</button>
+      <button class="btn" id="view">FLIP VIEW</button>
+    </div>
+    <div class="log" id="log" aria-label="Move list"></div>
+    <div class="bar">
+      <div class="seg" id="md" role="group" aria-label="Mode">
+        <button data-v="cpu" aria-pressed="true">VS CPU</button>
+        <button data-v="2p" aria-pressed="false">2 PLAYERS</button>
+      </div>
+      <div class="seg" id="lv" role="group" aria-label="Difficulty">
+        <button data-v="1" aria-pressed="false">EASY</button>
+        <button data-v="2" aria-pressed="true">NORMAL</button>
+        <button data-v="3" aria-pressed="false">HARD</button>
+      </div>
+    </div>
+    <small>DRAG TO ROTATE. PINCH OR SCROLL TO ZOOM. TAP A GLOWING PIT (OR PRESS 1-6) TO SOW. RULES: SEEDS GO ANTICLOCKWISE, ONE PER PIT. IF YOUR LAST SEED MAKES AN OPPONENT PIT 2 OR 3, YOU CAPTURE IT, PLUS PITS BEHIND IT HOLDING 2 OR 3. FIRST TO 25 WINS. YOU MUST FEED AN EMPTY OPPONENT. 12+ SEEDS SKIP THE START PIT. A MOVE THAT WOULD CAPTURE EVERYTHING CAPTURES NOTHING.</small>
+  </aside>
+</main>
+
+<!-- Vendored under /shared/vendor/three.min.js (MIT) so the game works offline. -->
+<script src="../shared/vendor/three.min.js"></script>
+<script src="../shared/shared.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const statusEl = $("#status"), plist = $("#players"), logEl = $("#log");
+  if (typeof THREE === "undefined") { statusEl.textContent = "3D ENGINE FAILED TO LOAD. CHECK CONNECTION."; return; }
+
+  const COLS = [0x4aa8ff, 0xff4f6d, 0xffd23f, 0x3ddc84, 0xc58bff];
+
+  // ---- arcade lobby XP: hub-owned amounts only, via shared/shared.js ----
+  function awardResult(won){
+    try { if (window.Shared && mode === "cpu") { Shared.recordGame('ayo', won); Shared.addXP('ayo', won ? Shared.XP.win : Shared.XP.loss); } } catch(e){}
+  }
+  let ac;
+  function beep(f, d = .06){
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "triangle"; o.frequency.value = f; g.gain.value = .06;
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    }catch(e){}
+  }
+
+  // ================= RULES (pits 0-5 bottom player, 6-11 top player; sowing 0 -> 11 is anticlockwise) =================
+  const sum = (b, lo) => { let t = 0; for (let i = lo; i < lo + 6; i++) t += b[i]; return t; };
+  function sow(b, i){
+    b = b.slice(); let n = b[i]; b[i] = 0; let j = i;
+    while (n > 0) { j = (j + 1) % 12; if (j === i) continue; b[j]++; n--; }
+    return { b, last: j };
+  }
+  function legal(st, p){
+    const lo = p * 6, olo = (1 - p) * 6, out = [];
+    for (let i = lo; i < lo + 6; i++) if (st.b[i] > 0) out.push(i);
+    if (sum(st.b, olo) === 0) return out.filter(i => sum(sow(st.b, i).b, olo) > 0);
+    return out;
+  }
+  function apply(st, i){
+    const p = st.t, olo = (1 - p) * 6;
+    const { b, last } = sow(st.b, i), s = st.s.slice();
+    let cap = 0, list = [];
+    if (last >= olo && last < olo + 6) {
+      const tmp = b.slice(); let j = last, c = 0; const L = [];
+      while (j >= olo && (tmp[j] === 2 || tmp[j] === 3)) { c += tmp[j]; L.push(j); tmp[j] = 0; j--; }
+      if (c > 0 && sum(tmp, olo) > 0) { L.forEach(x => b[x] = 0); s[p] += c; cap = c; list = L; }
+    }
+    const ns = { b, s, t: 1 - p, over: false, winner: null, n: (st.n || 0) + 1 };
+    if (s[p] >= 25 || ns.n > 300) ns.over = true;
+    else if (!legal(ns, ns.t).length) ns.over = true;
+    if (ns.over) { s[0] += sum(b, 0); s[1] += sum(b, 6); for (let k = 0; k < 12; k++) b[k] = 0; ns.winner = s[0] > s[1] ? 0 : s[1] > s[0] ? 1 : -1; }
+    return { ns, cap, list, last };
+  }
+
+  // ================= CPU =================
+  const ev = (st, me) => (st.s[me] - st.s[1 - me]) * 10 + (sum(st.b, me * 6) - sum(st.b, (1 - me) * 6)) * .6;
+  function minimax(st, d, a, be, me){
+    if (st.over) return st.winner === me ? 1000 + d : st.winner === -1 ? 0 : -1000 - d;
+    if (!d) return ev(st, me);
+    const mv = legal(st, st.t);
+    if (st.t === me) {
+      let best = -1e9;
+      for (const i of mv) { best = Math.max(best, minimax(apply(st, i).ns, d - 1, a, be, me)); a = Math.max(a, best); if (a >= be) break; }
+      return best;
+    }
+    let best = 1e9;
+    for (const i of mv) { best = Math.min(best, minimax(apply(st, i).ns, d - 1, a, be, me)); be = Math.min(be, best); if (a >= be) break; }
+    return best;
+  }
+  function cpuPick(){
+    const mv = legal(st, st.t);
+    if (level === 1 && Math.random() < .35) return mv[Math.floor(Math.random() * mv.length)];
+    const depth = [0, 2, 5, 7][level]; let best = mv[0], bv = -1e9;
+    mv.forEach(i => { const v = minimax(apply(st, i).ns, depth - 1, -1e9, 1e9, st.t) + Math.random() * .5; if (v > bv) { bv = v; best = i; } });
+    return best;
+  }
+
+  // ================= 3D SCENE =================
+  const cv = $("#gl"), wrap = $("#wrap");
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true }); }
+  catch (e) { statusEl.textContent = "WEBGL NOT SUPPORTED ON THIS DEVICE."; return; }
+  renderer.setClearColor(0x1b1230);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x1b1230, 40, 90);
+  scene.add(new THREE.AmbientLight(0xffffff, .7));
+  const sun = new THREE.DirectionalLight(0xffffff, .7); sun.position.set(-6, 14, 9); scene.add(sun);
+  const camera = new THREE.PerspectiveCamera(38, 1.6, .1, 120);
+
+  const mat = (c, o) => new THREE.MeshPhongMaterial(Object.assign({ color: c, shininess: 40, specular: 0x333333 }, o || {}));
+  const grid = new THREE.GridHelper(140, 70, 0xff4fd8, 0x4a3b8f); grid.position.y = -.95; scene.add(grid);
+
+  // board geometry
+  const PX = [-5.25, -3.15, -1.05, 1.05, 3.15, 5.25], ZB = 1.3, ZT = -1.3, SX = 8.2, PR = .88, SEEDY = .2;
+  const pitXZ = i => i < 6 ? [PX[i], ZB] : [PX[11 - i], ZT];          // pit centre in world x,z
+  const storeX = p => p === 0 ? SX : -SX;
+  function rr(path, cx, cy, w, h, r){
+    const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2;
+    path.moveTo(x0 + r, y0); path.lineTo(x1 - r, y0); path.quadraticCurveTo(x1, y0, x1, y0 + r);
+    path.lineTo(x1, y1 - r); path.quadraticCurveTo(x1, y1, x1 - r, y1);
+    path.lineTo(x0 + r, y1); path.quadraticCurveTo(x0, y1, x0, y1 - r);
+    path.lineTo(x0, y0 + r); path.quadraticCurveTo(x0, y0, x0 + r, y0);
+  }
+  const base = new THREE.Mesh(new THREE.BoxGeometry(20.2, .5, 7.6), mat(0x120b24)); base.position.y = -.25; scene.add(base);
+  const shape = new THREE.Shape(); rr(shape, 0, 0, 20, 7.4, 1.1);
+  for (let i = 0; i < 12; i++) { const [x, z] = pitXZ(i), h = new THREE.Path(); h.absarc(x, -z, PR, 0, Math.PI * 2, false); shape.holes.push(h); }
+  [-SX, SX].forEach(x => { const h = new THREE.Path(); rr(h, x, 0, 2.1, 5.2, .95); shape.holes.push(h); });
+  const topGeo = new THREE.ExtrudeGeometry(shape, { depth: .5, bevelEnabled: true, bevelThickness: .06, bevelSize: .06, bevelSegments: 2, curveSegments: 28 });
+  topGeo.rotateX(-Math.PI / 2);
+  scene.add(new THREE.Mesh(topGeo, mat(0x4a3b8f)));
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(20.3, .08, 7.7), new THREE.MeshBasicMaterial({ color: 0xff4fd8 })); trim.position.y = .1; scene.add(trim);
+
+  // pit rims, highlight rings, capture rings, hit areas
+  const rimGeo = new THREE.TorusGeometry(PR + .02, .05, 8, 40), ringGeo = new THREE.TorusGeometry(PR + .2, .07, 8, 40);
+  const rims = [], rings = [], capRings = [], hits = [];
+  for (let i = 0; i < 12; i++) {
+    const [x, z] = pitXZ(i);
+    const rim = new THREE.Mesh(rimGeo, mat(0x8a77e0)); rim.rotation.x = Math.PI / 2; rim.position.set(x, .57, z); scene.add(rim); rims.push(rim);
+    const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffd23f })); ring.rotation.x = Math.PI / 2; ring.position.set(x, .6, z); ring.visible = false; scene.add(ring); rings.push(ring);
+    const cr = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xff4fd8 })); cr.rotation.x = Math.PI / 2; cr.position.set(x, .62, z); cr.visible = false; scene.add(cr); capRings.push(cr);
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(PR + .1, PR + .1, 1.2, 16), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hit.position.set(x, .3, z); hit.userData.pit = i; scene.add(hit); hits.push(hit);
+  }
+
+  // count labels (sprites)
+  function makeLabel(w, h, sx, sy){
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const t = new THREE.CanvasTexture(c), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false }));
+    sp.scale.set(sx, sy, 1); sp.renderOrder = 10; scene.add(sp);
+    return { c, t, sp, key: "" };
+  }
+  function drawLabel(L, small, big, color){
+    const key = small + "|" + big + "|" + color; if (L.key === key) return; L.key = key;
+    const x = L.c.getContext("2d"), w = L.c.width;
+    x.clearRect(0, 0, w, L.c.height); x.textAlign = "center"; x.lineJoin = "round";
+    x.font = "bold 22px sans-serif"; x.lineWidth = 5; x.strokeStyle = "#0f0a1d"; x.strokeText(small, w / 2, 26); x.fillStyle = "#b9a6e6"; x.fillText(small, w / 2, 26);
+    x.font = "bold 58px sans-serif"; x.lineWidth = 8; x.strokeText(big, w / 2, 86); x.fillStyle = color; x.fillText(big, w / 2, 86);
+    L.t.needsUpdate = true;
+  }
+  const pitLabels = [], storeLabels = [];
+  for (let i = 0; i < 12; i++) { const [x, z] = pitXZ(i), L = makeLabel(128, 100, 1.5, 1.17); L.sp.position.set(x, 1.15, z + (i < 6 ? 2.5 : -2.5)); pitLabels.push(L); }
+  for (let p = 0; p < 2; p++) { const L = makeLabel(128, 100, 1.9, 1.5); L.sp.position.set(storeX(p), 1.5, 0); storeLabels.push(L); }
+
+  // seeds
+  const seedGeo = new THREE.SphereGeometry(.2, 14, 10);
+  const seedMats = COLS.map(c => mat(c, { shininess: 90, specular: 0x999999 }));
+  const seeds = [], pits = Array.from({ length: 12 }, () => []), stores = [[], []];
+  function slot(kind, idx, k){
+    if (kind === "pit") {
+      const [cx, cz] = pitXZ(idx), layer = Math.floor(k / 9), m = k % 9, a = m * 2.4, r = .06 + .5 * Math.sqrt(m / 9);
+      return new THREE.Vector3(cx + Math.cos(a) * r, SEEDY + layer * .3, cz + Math.sin(a) * r);
+    }
+    const col = k % 4, row = Math.floor(k / 4) % 9, layer = Math.floor(k / 36);
+    return new THREE.Vector3(storeX(idx) - .6 + col * .4, SEEDY + layer * .3, -2 + row * .5);
+  }
+  function place(sd, kind, idx){        // add seed to a list and aim it at its slot (no animation)
+    const list = kind === "pit" ? pits[idx] : stores[idx];
+    sd.kind = kind; sd.idx = idx; sd.target = slot(kind, idx, list.length); list.push(sd);
+  }
+  function fly(sd, kind, idx, dur, hop){   // add to destination list and animate there
+    place(sd, kind, idx);
+    sd.anim = { t0: performance.now(), dur, from: sd.mesh.position.clone(), hop };
+  }
+  function resetSeeds(b){
+    pits.forEach(l => l.length = 0); stores.forEach(l => l.length = 0);
+    let n = 0;
+    for (let i = 0; i < 12; i++) for (let k = 0; k < b[i]; k++) { const sd = seeds[n++]; place(sd, "pit", i); sd.anim = null; sd.mesh.position.copy(sd.target); }
+  }
+  for (let n = 0; n < 48; n++) { const m = new THREE.Mesh(seedGeo, seedMats[n % 5]); scene.add(m); seeds.push({ mesh: m, anim: null, target: new THREE.Vector3() }); }
+
+  // neon-retro camera: drag to orbit, wheel / pinch to zoom
+  let az = 0, azT = 0, el = .95, rad = 23;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function resize(){
+    const W = wrap.clientWidth, H = wrap.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(dpr); renderer.setSize(W, H, false);
+    camera.aspect = W / H; camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+  const ptrs = new Map(); let moved = 0, downAt = 0, pd = 0;
+  const dist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function hitPit(e){
+    const r = cv.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const h = ray.intersectObjects(hits.filter(m => playable.has(m.userData.pit)), false);
+    return h.length ? h[0].object.userData.pit : -1;
+  }
+  cv.addEventListener("pointerdown", e => {
+    cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = 0; downAt = performance.now(); if (ptrs.size === 2) pd = dist();
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = ptrs.get(e.pointerId);
+    if (!p) { cv.style.cursor = hitPit(e) >= 0 ? "pointer" : "grab"; return; }
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) { az -= dx * .008; azT = az; el = clamp(el + dy * .005, .4, 1.4); moved += Math.abs(dx) + Math.abs(dy); }
+    else if (ptrs.size === 2) { const d = dist(); rad = clamp(rad * pd / d, 12, 40); pd = d; moved += 99; }
+  });
+  cv.addEventListener("pointerup", e => {
+    if (ptrs.size === 1 && moved < 8 && performance.now() - downAt < 500) { const i = hitPit(e); if (i >= 0) human(i); }
+    ptrs.delete(e.pointerId);
+  });
+  cv.addEventListener("pointercancel", e => ptrs.delete(e.pointerId));
+  cv.addEventListener("wheel", e => { e.preventDefault(); rad = clamp(rad + e.deltaY * .02, 12, 40); }, { passive: false });
+
+  // ================= GAME STATE / UI =================
+  let st, level = 2, mode = "cpu", busy = true, gid = 0, wins = 0, losses = 0, starter = 0, moveNo = 0;
+  let playable = new Set(), capShow = [], pulse = {};
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const names = () => mode === "cpu" ? ["YOU", "CPU"] : ["BOTTOM", "TOP"];
+  const canHuman = i => !busy && !st.over && (mode === "2p" || st.t === 0) && Math.floor(i / 6) === st.t && legal(st, st.t).includes(i);
+
+  function refresh(){
+    playable = new Set(); for (let i = 0; i < 12; i++) if (canHuman(i)) playable.add(i);
+    for (let i = 0; i < 12; i++) drawLabel(pitLabels[i], String(i % 6 + 1), String(pits[i].length), playable.has(i) ? "#ffd23f" : "#f3ecff");
+    const nm = names();
+    for (let p = 0; p < 2; p++) drawLabel(storeLabels[p], nm[p], String(stores[p].length), p === 0 ? "#4aa8ff" : "#ff4f6d");
+  }
+  function renderPlayers(){
+    const nm = names();
+    plist.innerHTML = [1, 0].map(p => '<div class="pcard ' + (p === 0 ? "a" : "b") + (p === st.t && !st.over ? " on" : "") + '"><span class="chip"></span><span class="nm">' + nm[p] + '</span><span class="pg">CAPTURED ' + st.s[p] + '/25</span></div>').join("");
+  }
+  function setStatus(text){
+    renderPlayers(); refresh();
+    if (mode === "2p" && !busy && !st.over) azT = st.t === 0 ? 0 : Math.PI;
+    if (text) { statusEl.textContent = text; return; }
+    const feed = sum(st.b, (1 - st.t) * 6) === 0;
+    statusEl.textContent = busy ? (mode === "cpu" && st.t === 1 ? "CPU IS THINKING..." : "SOWING...")
+      : (mode === "cpu" ? "YOUR TURN: PICK A PIT" : names()[st.t] + "'S TURN") + (feed ? " (MUST FEED)" : "");
+  }
+  function logLine(p, text){
+    const d = document.createElement("div");
+    d.innerHTML = moveNo + '. <b class="' + (p === 0 ? "a" : "b") + '">' + names()[p] + '</b> ' + text;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  async function play(i, g){
+    busy = true; const p = st.t;
+    const { ns, cap, list } = apply(st, i);
+    setStatus();
+    const src = pits[i]; let j = i;
+    while (src.length) {
+      j = (j + 1) % 12; if (j === i) continue;
+      const sd = src.pop(); fly(sd, "pit", j, 260, 1.5); pulse[j] = performance.now(); refresh(); beep(200 + pits[j].length * 25);
+      await sleep(150); if (g !== gid) return;
+    }
+    await sleep(280); if (g !== gid) return;
+    if (cap) {
+      capShow = list; beep(560, .18);
+      list.forEach(pi => { pits[pi].slice().forEach((sd, k) => { pits[pi].splice(pits[pi].indexOf(sd), 1); setTimeout(() => { if (g === gid) { fly(sd, "store", p, 480, 2.4); refresh(); } }, 450 + k * 70); }); });
+      await sleep(450 + 70 * 4 + 600); if (g !== gid) return;
+      capShow = [];
+    }
+    moveNo++;
+    logLine(p, "pit " + (i % 6 + 1) + (cap ? ", captures " + cap : ""));
+    st = ns;
+    if (st.over) {
+      let k = 0;
+      for (let q = 0; q < 12; q++) pits[q].slice().forEach(sd => { pits[q].splice(pits[q].indexOf(sd), 1); setTimeout(() => { if (g === gid) { fly(sd, "store", q < 6 ? 0 : 1, 450, 2); refresh(); } }, 250 + (k++) * 60); });
+      await sleep(250 + k * 60 + 500); if (g !== gid) return;
+      return finish();
+    }
+    busy = false; setStatus();
+    if (mode === "cpu" && st.t === 1) cpuTurn(g);
+  }
+  async function cpuTurn(g){
+    busy = true; setStatus();
+    await sleep(700); if (g !== gid) return;
+    play(cpuPick(), g);
+  }
+  function human(i){ if (canHuman(i)) play(i, gid); }
+  function finish(){
+    busy = true; renderPlayers(); refresh();
+    const w = st.winner, nm = names(); let text;
+    if (w === -1) text = "DRAW " + st.s[0] + "-" + st.s[1];
+    else if (mode === "cpu") {
+      if (w === 0) { wins++; awardResult(true); text = "YOU WIN " + st.s[0] + "-" + st.s[1] + "! +" + Shared.XP.win + " XP"; }
+      else if (w === 1) { losses++; awardResult(false); text = "CPU WINS " + st.s[1] + "-" + st.s[0]; }
+      $("#score").textContent = "W" + wins + " L" + losses;
+    } else text = nm[w] + " WINS " + st.s[w] + "-" + st.s[1 - w] + "!";
+    statusEl.textContent = text; beep(660, .3);
+    const d = document.createElement("div"); d.textContent = text; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+  function reset(flip){
+    const g = ++gid;
+    if (flip && mode === "cpu") starter = 1 - starter;
+    st = { b: Array(12).fill(4), s: [0, 0], t: mode === "cpu" ? starter : 0, over: false, winner: null, n: 0 };
+    resetSeeds(st.b); moveNo = 0; capShow = []; pulse = {}; logEl.innerHTML = "";
+    azT = 0; busy = false; setStatus();
+    if (mode === "cpu" && st.t === 1) cpuTurn(g);
+  }
+
+  function group(sel, fn){
+    document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      fn(b.dataset.v); starter = 0; reset(false);
+    }));
+  }
+  group("#md", v => { mode = v; $("#lv").hidden = v !== "cpu"; });
+  group("#lv", v => level = +v);
+  $("#again").addEventListener("click", () => reset(true));
+  $("#view").addEventListener("click", () => { azT = Math.round((azT - Math.PI) / Math.PI) % 2 === 0 ? azT + Math.PI : azT - Math.PI; });
+  addEventListener("keydown", e => { if (/^[1-6]$/.test(e.key) && st) { const k = +e.key - 1; human(st.t === 0 ? k : 6 + k); } });
+
+  // ================= MAIN LOOP =================
+  let last = performance.now();
+  function frame(now){
+    last = now;
+    az += Math.atan2(Math.sin(azT - az), Math.cos(azT - az)) * .08;
+    camera.position.set(Math.sin(az) * Math.cos(el) * rad, Math.sin(el) * rad, Math.cos(az) * Math.cos(el) * rad);
+    camera.lookAt(0, 0, 0);
+    seeds.forEach(sd => {
+      const a = sd.anim;
+      if (a) {
+        const u = Math.min(1, (now - a.t0) / a.dur);
+        sd.mesh.position.lerpVectors(a.from, sd.target, u); sd.mesh.position.y += a.hop * Math.sin(Math.PI * u);
+        if (u >= 1) sd.anim = null;
+      } else sd.mesh.position.copy(sd.target);
+    });
+    const beat = 1 + .05 * Math.sin(now / 160);
+    for (let i = 0; i < 12; i++) {
+      rings[i].visible = playable.has(i); rings[i].scale.setScalar(beat);
+      capRings[i].visible = capShow.includes(i);
+      const pu = pulse[i] ? Math.max(0, 1 - (now - pulse[i]) / 220) : 0; rims[i].scale.setScalar(1 + .12 * pu);
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  resize(); reset(false); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
