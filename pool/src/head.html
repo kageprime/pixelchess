@@ -1,0 +1,210 @@
+<title>Pixel Pool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout concept: full-bleed low-res 3D table, HUD as chunky arcade panels with notched pixel corners.
+   Single dark look by design: an arcade cabinet screen. */
+:root {
+  --bg: #120d24;
+  --panel: #1c1440;
+  --panel-hi: #2d2166;
+  --edge: #6f5ee0;
+  --ink: #f7f1ff;
+  --mute: #a99fd9;
+  --gold: #ffd23f;
+  --gold-deep: #a8741a;
+  --pink: #ff5fa8;
+  --cyan: #58f0ff;
+  --lime: #7dff9a;
+  --danger: #ff5656;
+  --font-ui: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --font-body: 'VT323', ui-monospace, 'Courier New', monospace;
+  --notch: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px));
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; background: var(--bg); overflow: hidden; }
+body {
+  font-family: var(--font-body); font-size: 20px; color: var(--ink);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; }
+#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; background: var(--bg); }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+#hud[hidden] { display: none; }
+#top {
+  display: grid; grid-template-columns: minmax(0, 300px) auto minmax(0, 300px); justify-content: space-between; gap: 8px; align-items: start;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px 0;
+}
+.pcard {
+  pointer-events: none; background: var(--panel); clip-path: var(--notch); min-width: 0;
+  padding: 8px 10px 9px; box-shadow: inset 0 0 0 3px var(--edge); display: grid; gap: 6px; opacity: .92;
+}
+.pcard.right { justify-items: end; text-align: right; }
+.pcard.active { background: var(--panel-hi); box-shadow: inset 0 0 0 3px var(--gold); opacity: 1; }
+.pcard[hidden] { display: grid !important; visibility: hidden; }
+.pname { font-family: var(--font-ui); font-size: 10px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 100%; }
+.pgroup { font-family: var(--font-ui); font-size: 8px; color: var(--mute); }
+.pcard.active .pgroup { color: var(--gold); }
+.tray { display: flex; gap: 3px; flex-wrap: wrap; min-height: 12px; }
+.pcard.right .tray { justify-content: flex-end; }
+.bi { width: 11px; height: 11px; box-shadow: inset -2px -2px 0 rgba(0,0,0,.35), inset 2px 2px 0 rgba(255,255,255,.35); clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+.bi.stripe { background-image: linear-gradient(180deg, #fff 0 30%, transparent 30% 70%, #fff 70% 100%); }
+.bi.gone { opacity: .22; filter: grayscale(.6); }
+#mid { display: grid; grid-template-columns: repeat(2, 40px); gap: 4px; pointer-events: auto; }
+.mini {
+  font-family: var(--font-ui); font-size: 8px; line-height: 1; height: 32px; padding: 0; border: 0; cursor: pointer;
+  background: var(--panel-hi); color: var(--ink); clip-path: var(--notch); box-shadow: inset 0 0 0 3px var(--edge);
+}
+.mini:hover, .mini:focus-visible { background: var(--edge); outline: none; }
+.mini[aria-pressed="false"] { color: var(--mute); text-decoration: line-through; }
+#turn {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 100px);
+  font-family: var(--font-ui); font-size: 9px; line-height: 1.5; text-align: center; padding: 6px 10px; max-width: calc(100% - 32px);
+  background: rgba(18, 13, 36, .82); clip-path: var(--notch); color: var(--cyan); white-space: nowrap;
+}
+#turn:empty { display: none; }
+#toast {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; width: max-content; max-width: calc(100% - 32px);
+  font-family: var(--font-ui); font-size: 20px; line-height: 1.4; color: var(--gold); pointer-events: none; opacity: 0;
+  text-shadow: 3px 0 #1a0f3a, -3px 0 #1a0f3a, 0 3px #1a0f3a, 0 -3px #1a0f3a, 3px 3px #1a0f3a, -3px -3px #1a0f3a, 3px -3px #1a0f3a, -3px 3px #1a0f3a;
+}
+#toast.show { animation: pop 1.6s steps(8) forwards; }
+#toast small { display: block; font-size: 10px; margin-top: 8px; color: var(--ink); }
+@keyframes pop {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  22% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+}
+#bottom {
+  display: flex; gap: 10px; align-items: stretch; pointer-events: auto;
+  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
+}
+#spinwrap { display: grid; gap: 4px; justify-items: center; }
+#spin { width: 60px; height: 60px; image-rendering: pixelated; cursor: pointer; touch-action: none; background: var(--panel); clip-path: var(--notch); box-shadow: inset 0 0 0 3px var(--edge); }
+.lab { font-family: var(--font-ui); font-size: 7px; color: var(--mute); letter-spacing: .06em; }
+#powerwrap { flex: 1; min-width: 0; display: grid; gap: 4px; align-content: end; }
+#power {
+  position: relative; height: 36px; background: var(--panel); clip-path: var(--notch); box-shadow: inset 0 0 0 3px var(--edge); cursor: ew-resize; touch-action: none; overflow: hidden;
+}
+#pfill {
+  position: absolute; left: 6px; top: 6px; bottom: 6px; width: 50%; max-width: calc(100% - 12px);
+  background: linear-gradient(90deg, var(--lime) 0 38%, var(--gold) 38% 70%, var(--pink) 70% 100%);
+  background-size: calc(var(--pw, 280px)) 100%;
+}
+#power::after { content: ""; position: absolute; inset: 6px; background: repeating-linear-gradient(90deg, transparent 0 7px, var(--panel) 7px 10px); pointer-events: none; }
+#ptxt { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-family: var(--font-ui); font-size: 9px; z-index: 2; text-shadow: 2px 2px 0 #000; }
+#shoot {
+  font-family: var(--font-ui); font-size: 12px; width: 108px; border: 0; cursor: pointer; letter-spacing: .04em;
+  background: var(--gold); color: #2a1a00; clip-path: var(--notch);
+  box-shadow: inset -4px -4px 0 var(--gold-deep), inset 4px 4px 0 #fff2a8;
+}
+#shoot:active { transform: translateY(2px); }
+#shoot:disabled { background: var(--panel-hi); color: var(--mute); box-shadow: inset 0 0 0 3px var(--edge); cursor: default; }
+#shoot:focus-visible, .btn:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* ---------- overlays ---------- */
+.overlay {
+  position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; box-sizing: border-box;
+  background: radial-gradient(ellipse at center, rgba(18,13,36,.35), rgba(18,13,36,.86)); overflow-y: auto;
+}
+.overlay[hidden] { display: none; }
+.overlay.ingame { background: rgba(18, 13, 36, .93); }
+.box { width: min(100%, 460px); display: grid; gap: 14px; justify-items: center; text-align: center; padding-block: 8px; }
+#logo { width: min(100%, 360px); image-rendering: pixelated; height: auto; }
+.tag { font-family: var(--font-ui); font-size: 9px; letter-spacing: .18em; color: var(--pink); }
+.btns { display: grid; gap: 10px; width: 100%; }
+.btn {
+  font-family: var(--font-ui); font-size: 13px; padding: 15px 12px; border: 0; cursor: pointer; width: 100%;
+  background: var(--panel-hi); color: var(--ink); clip-path: var(--notch); box-shadow: inset 0 0 0 3px var(--edge);
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left;
+}
+.btn span { font-size: 8px; color: var(--mute); text-align: right; line-height: 1.5; }
+.btn:hover, .btn:focus-visible { background: var(--edge); }
+.btn:hover span, .btn:focus-visible span { color: var(--ink); }
+.btn.primary { background: var(--gold); color: #2a1a00; box-shadow: inset -4px -4px 0 var(--gold-deep), inset 4px 4px 0 #fff2a8; }
+.btn.primary span { color: #5b3b00; }
+.btn.primary:hover, .btn.primary:focus-visible { background: #ffe27a; }
+.chips { display: flex; gap: 8px; width: 100%; align-items: center; justify-content: center; flex-wrap: wrap; }
+.chip { font-family: var(--font-ui); font-size: 9px; padding: 9px 12px; border: 0; cursor: pointer; background: var(--panel); color: var(--mute); clip-path: var(--notch); box-shadow: inset 0 0 0 3px #3a2f7a; }
+.chip[aria-pressed="true"] { color: var(--ink); background: var(--panel-hi); box-shadow: inset 0 0 0 3px var(--cyan); }
+.help { font-size: 19px; line-height: 1.15; color: var(--mute); display: grid; gap: 3px; max-width: 440px; }
+.help b { color: var(--ink); font-weight: normal; }
+#overTitle { font-family: var(--font-ui); font-size: 22px; line-height: 1.4; color: var(--gold); text-shadow: 4px 4px 0 #1a0f3a; margin: 0; }
+#overSub { font-size: 24px; color: var(--ink); margin: 0; }
+
+@media (max-width: 520px) {
+  .pname { font-size: 9px; } .pcard { padding: 7px 8px 8px; }
+  #shoot { width: 92px; font-size: 11px; }
+  #toast { font-size: 16px; }
+}
+@media (max-height: 520px) {
+  #mid { grid-template-columns: repeat(4, 38px); }
+  #turn { top: calc(env(safe-area-inset-top, 0px) + 64px); }
+  .pcard { padding: 5px 8px 6px; gap: 3px; } #spin { width: 48px; height: 48px; } #power { height: 28px; } #bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .box { gap: 8px; } .help { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { #toast.show { animation: none; opacity: 1; } }
+</style>
+
+<canvas id="gl" aria-label="3D pool table"></canvas>
+
+<div id="hud" hidden>
+  <div id="top">
+    <div class="pcard active" id="p0"><div class="pname" id="n0">YOU</div><div class="pgroup" id="g0">OPEN</div><div class="tray" id="t0"></div></div>
+    <div id="mid">
+      <button class="mini" id="bView" title="Change camera (V)">3D</button>
+      <button class="mini" id="bMenu" title="Menu (Esc)">MENU</button>
+      <button class="mini" id="bMus" aria-pressed="true" title="Music (M)">MUS</button>
+      <button class="mini" id="bSfx" aria-pressed="true" title="Sound effects">SFX</button>
+    </div>
+    <div class="pcard right" id="p1"><div class="pname" id="n1">CPU</div><div class="pgroup" id="g1">OPEN</div><div class="tray" id="t1"></div></div>
+  </div>
+  <div id="turn"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="bottom">
+    <div id="spinwrap"><canvas id="spin" width="21" height="21" title="Cue ball spin: tap where the cue hits. Double tap to reset."></canvas><div class="lab">SPIN</div></div>
+    <div id="powerwrap"><div id="power" role="slider" aria-label="Shot power" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><div id="pfill"></div><div id="ptxt">50</div></div><div class="lab">POWER</div></div>
+    <button id="shoot">SHOOT</button>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="box">
+    <canvas id="logo" width="96" height="40"></canvas>
+    <div class="tag">PIXEL UNIVERSE</div>
+    <div class="btns">
+      <button class="btn primary" data-mode="cpu">VS CPU <span>8-BALL<br>YOU BREAK</span></button>
+      <button class="btn" data-mode="2p">2 PLAYERS <span>PASS &amp; PLAY</span></button>
+      <button class="btn" data-mode="practice">PRACTICE <span>NO RULES</span></button>
+      <button class="btn" id="bResume" hidden>RESUME <span>BACK TO GAME</span></button>
+    </div>
+    <div class="chips" role="group" aria-label="CPU skill">
+      <span class="lab">CPU SKILL</span>
+      <button class="chip" data-diff="0" aria-pressed="false">ROOKIE</button>
+      <button class="chip" data-diff="1" aria-pressed="true">PRO</button>
+    </div>
+    <div class="help">
+      <div><b>AIM</b> drag on the table, or arrow keys</div>
+      <div><b>POWER</b> drag the bar, hold SPACE to charge</div>
+      <div><b>SPIN</b> tap the ball: top = follow, bottom = draw</div>
+      <div><b>VIEW</b> tap the camera button or press V</div>
+    </div>
+  </div>
+</div>
+
+<div id="over" class="overlay" hidden>
+  <div class="box">
+    <h2 id="overTitle">YOU WIN!</h2>
+    <p id="overSub"></p>
+    <div class="btns">
+      <button class="btn primary" id="bAgain">REMATCH <span>SAME SETTINGS</span></button>
+      <button class="btn" id="bBack">MAIN MENU</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1230">
+<title>Pixel Connect 4 | Pixel Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+:root{
+  --bg:#1b1230; --panel:#2a1c4a; --edge:#0f0a1d; --text:#f3ecff; --dim:#9d8cc4;
+  --red:#ff4f6d; --yel:#ffd23f; --hole:#120b24; --blue:#4a3b8f;
+  --px:"Press Start 2P",ui-monospace,"Courier New",monospace;
+  box-sizing:border-box;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--px);min-height:100%}
+body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 12px 28px;font-size:10px;line-height:1.7}
+a{color:var(--dim);text-decoration:none}
+a:hover,a:focus-visible{color:var(--yel)}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+header{width:min(100%,460px);display:flex;justify-content:space-between;align-items:center}
+h1{font-size:14px;margin:0;color:var(--yel);text-shadow:2px 2px 0 var(--edge)}
+.bar{width:min(100%,460px);display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:flex;border:3px solid var(--edge);background:var(--panel)}
+.seg button{font:inherit;color:var(--dim);background:none;border:0;padding:8px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--yel);color:var(--edge)}
+.seg[hidden]{display:none}
+#status{width:min(100%,460px);min-height:36px;display:flex;align-items:center;gap:10px;background:var(--panel);border:3px solid var(--edge);padding:8px 10px}
+.chip{width:16px;height:16px;flex:none;clip-path:var(--pix)}
+.red{background:var(--red)} .yel{background:var(--yel)}
+:root{--pix:polygon(30% 0,70% 0,70% 10%,90% 10%,90% 30%,100% 30%,100% 70%,90% 70%,90% 90%,70% 90%,70% 100%,30% 100%,30% 90%,10% 90%,10% 70%,0 70%,0 30%,10% 30%,10% 10%,30% 10%)}
+#wrap{position:relative;width:min(100%,460px);background:var(--blue);border:4px solid var(--edge);padding:8px;box-shadow:6px 6px 0 var(--edge)}
+#grid{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;aspect-ratio:7/6}
+.cell{position:relative;background:var(--hole);overflow:hidden}
+.disc{position:absolute;inset:8%;clip-path:var(--pix);animation:fall .38s cubic-bezier(.5,0,1,.6) both;animation-duration:calc(.14s + var(--r) * .05s)}
+.disc.win{animation:fall 0s both,blink .5s steps(2) infinite}
+.disc.pop{animation:pop .18s both}
+@keyframes pop{from{transform:scale(.2)}to{transform:none}}
+@keyframes fall{from{transform:translateY(calc(-110% * (var(--r) + 1)))}to{transform:none}}
+@keyframes blink{50%{background:#fff}}
+#cols{position:absolute;inset:8px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+#cols button{background:none;border:0;padding:0;cursor:pointer;position:relative}
+#cols button:hover:not(:disabled),#cols button:focus-visible{background:rgba(255,255,255,.12)}
+#cols button:disabled{cursor:default}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn{font:inherit;background:var(--yel);color:var(--edge);border:3px solid var(--edge);padding:10px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--edge)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+.score{color:var(--dim)}
+small{color:var(--dim);font-size:8px;text-align:center;max-width:420px}
+@media (prefers-reduced-motion:reduce){.disc,.disc.win{animation:none}.disc.win{outline:3px solid #fff}}
+
+/* ---- two-pane layout: board left, panel right ---- */
+.app{--bw:min(calc(100vh - 40px),calc(100vw - 440px));display:flex;gap:20px;align-items:stretch;justify-content:center;width:100%;max-width:1120px}
+body{flex-direction:row;gap:0;align-items:center;justify-content:center;min-height:100vh;padding:18px 14px}
+.stage{flex:none;width:max(320px,var(--bw))}
+.side{flex:0 0 360px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.side header,.side .bar,.side .controls,.side #status,.stage #board,.stage #wrap{width:100%}
+.side .controls{justify-content:flex-start}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pcard{--c:var(--yel);display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel);border:3px solid var(--edge);border-left:8px solid var(--c);opacity:.65}
+.pcard.on{opacity:1;box-shadow:0 0 0 2px var(--c)}
+.pcard.r{--c:var(--red)}.pcard.y{--c:var(--yel)}
+.pcard .nm{flex:1}
+.pcard .pg{color:var(--dim);font-size:8px}
+.log{flex:1;min-height:100px;overflow:auto;background:var(--panel);border:3px solid var(--edge);padding:8px 10px;font-size:8px;line-height:2.1}
+.log b{color:var(--c)}.log b.r{color:var(--red)}.log b.y{color:var(--yel)}
+.log:empty::before{content:"MOVES APPEAR HERE";color:var(--dim)}
+@media (max-width:900px){
+  body{align-items:flex-start}
+  .app{flex-direction:column;align-items:center}
+  .stage{width:min(100%,520px)}
+  .side{flex:none;width:min(100%,520px)}
+  .log{flex:none;max-height:150px}
+}
+.app{--bw:min(calc((100vh - 40px) * 7 / 6),calc(100vw - 440px))}
+.seg[hidden]{display:none}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="stage">
+    <div id="wrap">
+      <div id="grid" aria-hidden="true"></div>
+      <div id="cols"></div>
+    </div>
+  </section>
+  <aside class="side">
+    <header class="top"><a href="../index.html">&lt; LOBBY</a><h1>CONNECT 4</h1><span class="score" id="score">W0 L0</span></header>
+    <div class="plist" id="players"></div>
+    <div id="status" role="status" aria-live="polite"><span class="chip red" id="chip"></span><span id="msg"></span></div>
+    <div class="controls"><button class="btn" id="again">NEW GAME</button></div>
+    <div class="log" id="log" aria-label="Move list"></div>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Mode">
+        <button data-mode="cpu" aria-pressed="true">VS CPU</button>
+        <button data-mode="2p" aria-pressed="false">2 PLAYERS</button>
+      </div>
+      <div class="seg" id="place" role="group" aria-label="Placement">
+        <button data-pl="drop" aria-pressed="true">DROP</button>
+        <button data-pl="free" aria-pressed="false">ANY SPOT</button>
+      </div>
+      <div class="seg" id="levels" role="group" aria-label="Difficulty">
+        <button data-lv="1" aria-pressed="false">EASY</button>
+        <button data-lv="2" aria-pressed="true">NORMAL</button>
+        <button data-lv="3" aria-pressed="false">HARD</button>
+      </div>
+    </div>
+    <small id="hint"></small>
+  </aside>
+</main>
+
+<script src="../shared/shared.js"></script>
+<script>
+(() => {
+  const R = 6, C = 7, ORDER = [3,2,4,1,5,0,6];
+  const $ = s => document.querySelector(s);
+  const grid = $("#grid"), cols = $("#cols"), msg = $("#msg"), chip = $("#chip"), plist = $("#players"), logEl = $("#log");
+  let board, turn, over, busy, mode = "cpu", level = 2, wins = 0, losses = 0, moveNo = 0;
+
+  // ---- arcade lobby XP: hub-owned amounts only, via shared/shared.js ----
+  function awardResult(won){
+    try { if (window.Shared && mode === "cpu") { Shared.recordGame('connect4', won); Shared.addXP('connect4', won ? Shared.XP.win : Shared.XP.loss); } } catch(e){}
+  }
+
+  // ---- sound ----
+  let ac;
+  function beep(f, d = .07){
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "square"; o.frequency.value = f; g.gain.value = .04;
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    }catch(e){}
+  }
+
+  // ---- build UI ----
+  for (let i = 0; i < R * C; i++) grid.insertAdjacentHTML("beforeend", '<div class="cell"></div>');
+  let place = "drop";
+  function buildOverlay(){
+    cols.innerHTML = "";
+    cols.style.gridTemplateRows = place === "free" ? "repeat(" + R + ",1fr)" : "";
+    const n = place === "free" ? R * C : C;
+    for (let k = 0; k < n; k++) {
+      const b = document.createElement("button");
+      b.dataset.k = k;
+      b.setAttribute("aria-label", place === "free" ? "Place at row " + (Math.floor(k / C) + 1) + ", column " + (k % C + 1) : "Drop in column " + (k + 1));
+      b.addEventListener("click", () => play(place === "free" ? k : rowOf(board, k) * C + k));
+      cols.appendChild(b);
+    }
+  }
+
+  // ---- rules ----
+  const rowOf = (b, c) => { for (let r = R - 1; r >= 0; r--) if (!b[r * C + c]) return r; return -1; };
+  const DIRS = [[0,1],[1,0],[1,1],[1,-1]];
+  function winLine(b, p){
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+      if (b[r * C + c] !== p) continue;
+      for (const [dr, dc] of DIRS) {
+        const line = [[r, c]];
+        for (let k = 1; k < 4; k++) {
+          const rr = r + dr * k, cc = c + dc * k;
+          if (rr < 0 || rr >= R || cc < 0 || cc >= C || b[rr * C + cc] !== p) break;
+          line.push([rr, cc]);
+        }
+        if (line.length === 4) return line;
+      }
+    }
+    return null;
+  }
+  const full = b => b.every(Boolean);
+  const FREE_ORDER = Array.from({ length: R * C }, (_, i) => i).sort((x, y) => (Math.abs(x % C - 3) + Math.abs(Math.floor(x / C) - 2.5)) - (Math.abs(y % C - 3) + Math.abs(Math.floor(y / C) - 2.5)));
+  function moves(b){
+    if (place === "free") return FREE_ORDER.filter(i => !b[i]);
+    return ORDER.map(c => rowOf(b, c) * C + c).filter(i => i >= 0 && !(Math.floor(i / C) < 0));
+  }
+
+  // ---- CPU: minimax + alpha-beta ----
+  function scoreWindow(w, p){
+    const o = 3 - p; let m = 0, e = 0, t = 0;
+    for (const v of w) v === p ? m++ : v === o ? t++ : e++;
+    if (m && t) return 0;
+    if (m === 3) return 5;
+    if (m === 2) return 2;
+    if (t === 3) return -6;
+    if (t === 2) return -2;
+    return 0;
+  }
+  function evaluate(b, p){
+    let s = 0;
+    for (let r = 0; r < R; r++) if (b[r * C + 3] === p) s += 3;
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of DIRS) {
+      const er = r + dr * 3, ec = c + dc * 3;
+      if (er < 0 || er >= R || ec < 0 || ec >= C) continue;
+      const w = []; for (let k = 0; k < 4; k++) w.push(b[(r + dr * k) * C + c + dc * k]);
+      s += scoreWindow(w, p);
+    }
+    return s;
+  }
+  function search(b, depth, a, be, max, me){
+    const opp = 3 - me;
+    if (winLine(b, me)) return [null, 1e6 + depth];
+    if (winLine(b, opp)) return [null, -1e6 - depth];
+    if (full(b)) return [null, 0];
+    if (!depth) return [null, evaluate(b, me)];
+    const mv = moves(b); let best = mv[0], val = max ? -Infinity : Infinity;
+    for (const i of mv) {
+      b[i] = max ? me : opp;
+      const v = search(b, depth - 1, a, be, !max, me)[1];
+      b[i] = 0;
+      if (max ? v > val : v < val) { val = v; best = i; }
+      if (max) a = Math.max(a, val); else be = Math.min(be, val);
+      if (a >= be) break;
+    }
+    return [best, val];
+  }
+  function cpuMove(){
+    const open = moves(board);
+    if (level === 1 && Math.random() < .4) return open[Math.floor(Math.random() * open.length)];
+    return search(board.slice(), (place === "free" ? [0, 1, 2, 3] : [0, 2, 4, 6])[level], -Infinity, Infinity, true, 2)[0];
+  }
+
+  // ---- game flow ----
+  function renderPlayers(){
+    const names = mode === "cpu" ? ["RED (YOU)", "YELLOW (CPU)"] : ["RED", "YELLOW"];
+    plist.innerHTML = [1, 2].map(p => '<div class="pcard ' + (p === 1 ? "r" : "y") + (p === turn ? " on" : "") + '"><span class="chip ' + (p === 1 ? "red" : "yel") + '"></span><span class="nm">' + names[p - 1] + '</span><span class="pg">DISCS ' + board.filter(x => x === p).length + '</span></div>').join("");
+  }
+  function addLog(html){ const d = document.createElement("div"); d.innerHTML = html; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+  function setStatus(){
+    renderPlayers();
+    chip.className = "chip " + (turn === 1 ? "red" : "yel");
+    msg.textContent = mode === "cpu"
+      ? (turn === 1 ? "YOUR TURN" : "CPU THINKING...")
+      : (turn === 1 ? "RED'S TURN" : "YELLOW'S TURN");
+    cols.querySelectorAll("button").forEach(b => {
+      const k = +b.dataset.k, open = place === "free" ? !board[k] : rowOf(board, k) >= 0;
+      b.disabled = over || busy || (mode === "cpu" && turn === 2) || !open;
+    });
+  }
+  function reset(){
+    buildOverlay();
+    board = Array(R * C).fill(0); turn = 1; over = false; busy = false; moveNo = 0; logEl.innerHTML = "";
+    grid.querySelectorAll(".cell").forEach(c => c.innerHTML = "");
+    setStatus();
+  }
+  function play(i){
+    if (over || busy || i < 0 || board[i]) return;
+    const r = Math.floor(i / C), c = i % C;
+    board[i] = turn;
+    const d = document.createElement("div");
+    d.className = "disc " + (turn === 1 ? "red" : "yel");
+    d.style.setProperty("--r", r);
+    if (place === "free") d.classList.add("pop");
+    grid.children[i].appendChild(d);
+    beep(turn === 1 ? 330 : 262);
+    moveNo++; addLog(moveNo + ". <b class=\"" + (turn === 1 ? "r" : "y") + "\">" + (turn === 1 ? "RED" : "YELLOW") + "</b> " + (place === "free" ? "row " + (r + 1) + ", column " + (c + 1) : "column " + (c + 1)));
+
+    const line = winLine(board, turn);
+    if (line || full(board)) return finish(line);
+    turn = 3 - turn;
+    setStatus();
+    if (mode === "cpu" && turn === 2) {
+      busy = true; setStatus();
+      setTimeout(() => { busy = false; play(cpuMove()); }, 450);
+    }
+  }
+  function finish(line){
+    over = true;
+    if (line) {
+      line.forEach(([r, c]) => grid.children[r * C + c].firstChild.classList.add("win"));
+      beep(660, .25);
+      if (mode === "cpu") {
+        if (turn === 1) { wins++; awardResult(true); msg.textContent = "YOU WIN! +" + Shared.XP.win + " XP"; }
+        else { losses++; awardResult(false); msg.textContent = "CPU WINS"; }
+        $("#score").textContent = "W" + wins + " L" + losses;
+      } else msg.textContent = (turn === 1 ? "RED" : "YELLOW") + " WINS!";
+    } else msg.textContent = "DRAW";
+    chip.className = "chip " + (turn === 1 ? "red" : "yel");
+    addLog(line ? "<b class=\"" + (turn === 1 ? "r" : "y") + "\">" + (turn === 1 ? "RED" : "YELLOW") + "</b> wins!" : "Draw");
+    renderPlayers();
+    cols.querySelectorAll("button").forEach(b => b.disabled = true);
+  }
+
+  // ---- controls ----
+  function group(sel, attr, fn){
+    document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll(sel + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      fn(b.dataset[attr]); reset();
+    }));
+  }
+  group(".bar .seg:first-child", "mode", v => { mode = v; $("#levels").hidden = v !== "cpu"; });
+  group("#levels", "lv", v => level = +v);
+  const HINTS = {
+    drop: "CLASSIC: PICK A COLUMN AND THE DISC FALLS TO THE BOTTOM. PRESS 1-7. FOUR IN A ROW WINS.",
+    free: "ANY SPOT: PLACE A DISC ON ANY EMPTY CELL. FOUR IN A ROW WINS. THE FIRST PLAYER HAS A BIG EDGE, SO TAKE TURNS GOING FIRST."
+  };
+  group("#place", "pl", v => { place = v; $("#hint").textContent = HINTS[v]; });
+  $("#hint").textContent = HINTS.drop;
+  $("#again").addEventListener("click", reset);
+  addEventListener("keydown", e => { if (place === "drop" && /^[1-7]$/.test(e.key)) { const c = +e.key - 1; play(rowOf(board, c) * C + c); } });
+
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -26,11 +26,11 @@ const server = http.createServer((req, res) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false }), pg = await ctx.newPage();
     await pg.goto(base);
     const cards = await pg.$$eval('.card', a => a.map(x => ({ href: x.getAttribute('href'), dis: x.getAttribute('aria-disabled'), tab: x.getAttribute('tabindex'), t: x.querySelector('h2').textContent, b: x.querySelector('.bd').textContent })));
-    ok('six game cards in the static markup', cards.length === 6, cards.length);
-    ok('card order is Chess, Ayo, Draughts, Shogi, Pool, Scrabble', cards.map(c => c.t).join() === 'CHESS,AYO,DRAUGHTS,SHOGI,POOL,SCRABBLE', cards.map(c => c.t));
-    ok('Chess, Pool and Scrabble are PLAYABLE and link to their pages', cards.filter(c => c.href).length === 3 && cards[0].href === 'chess/index.html' && cards[4].href === 'pool/index.html' && cards[5].href === 'scrabble/index.html' && [0, 4, 5].every(i => cards[i].b === 'PLAYABLE'), cards);
-    ok('the other three are SOON, aria-disabled, focusable, no href', [1, 2, 3].every(i => cards[i].b === 'SOON' && cards[i].dis === 'true' && cards[i].tab === '0' && !cards[i].href));
-    ok('every card has an inline pixel icon', (await pg.$$('.card svg.ic')).length === 6);
+    ok('eight game cards in the static markup', cards.length === 8, cards.length);
+    ok('card order is Chess, Ayo, Draughts, Shogi, Pool, Scrabble, Connect 4, Ludo', cards.map(c => c.t).join() === 'CHESS,AYO,DRAUGHTS,SHOGI,POOL,SCRABBLE,CONNECT 4,LUDO', cards.map(c => c.t));
+    ok('Chess, Ayo, Pool, Scrabble, Connect 4 and Ludo are PLAYABLE and link to their pages', cards.filter(c => c.href).length === 6 && cards[0].href === 'chess/index.html' && cards[1].href === 'ayo/index.html' && cards[4].href === 'pool/index.html' && cards[5].href === 'scrabble/index.html' && cards[6].href === 'connect4/index.html' && cards[7].href === 'ludo/index.html' && [0, 1, 4, 5, 6, 7].every(i => cards[i].b === 'PLAYABLE'), cards);
+    ok('the other two are SOON, aria-disabled, focusable, no href', [2, 3].every(i => cards[i].b === 'SOON' && cards[i].dis === 'true' && cards[i].tab === '0' && !cards[i].href));
+    ok('every card has an inline pixel icon', (await pg.$$('.card svg.ic')).length === 8);
     await ctx.close();
   }
 
@@ -42,13 +42,17 @@ const server = http.createServer((req, res) => {
     const codes = await Promise.all(urls.map(async u => [u, (await ctx.request.get(u)).status()]));
     ok('all links, styles and scripts on the hub resolve (' + urls.length + ')', codes.every(c => c[1] === 200), codes.filter(c => c[1] !== 200));
     const pool = await ctx.request.get(base + 'pool/index.html');
-    ok('pool is served at /pool/index.html', pool.status() === 200 && (await pool.text()).includes('Pixel Pool 3D'));
+    ok('pool is served at /pool/index.html', pool.status() === 200 && (await pool.text()).includes('Pixel Pool'));
     const scr = await ctx.request.get(base + 'scrabble/index.html');
     ok('scrabble is served at /scrabble/index.html', scr.status() === 200 && (await scr.text()).includes('Pixel Scrabble'));
     const chess = await ctx.request.get(base + 'chess/index.html');
     ok('chess is served at /chess/index.html', chess.status() === 200 && (await chess.text()).includes('Pixel Chess'));
     const scrabble = await ctx.request.get(base + 'scrabble/index.html');
     ok('scrabble is served at /scrabble/index.html', scrabble.status() === 200 && (await scrabble.text()).includes('PIXEL') && (await scrabble.text()).includes('SCRABBLE'));
+    for (const gp of [['ayo', 'AYO'], ['connect4', 'CONNECT 4'], ['ludo', 'LUDO']]) {
+      const gr = await ctx.request.get(base + gp[0] + '/index.html');
+      ok(gp[0] + ' is served at /' + gp[0] + '/index.html', gr.status() === 200 && (await gr.text()).includes(gp[1]));
+    }
     await ctx.close();
   }
 
@@ -81,7 +85,7 @@ const server = http.createServer((req, res) => {
 
     // SOON cards do nothing on click, Enter or Space
     const before = pg.url();
-    for (const i of [1, 2, 3]) {
+    for (const i of [2, 3]) {
       const c = pg.locator('.card').nth(i);
       await c.click({ force: true }); await c.focus(); await pg.keyboard.press('Enter'); await pg.keyboard.press('Space');
     }
@@ -151,9 +155,10 @@ const server = http.createServer((req, res) => {
     await pg.click('#start');
     await pg.waitForTimeout(600);
     await pg.keyboard.press('ArrowRight');
+    await pg.keyboard.press('ArrowRight');
     await pg.keyboard.press('Enter');
     await pg.waitForTimeout(300);
-    ok('Enter on a SOON cabinet stays put', (await pg.evaluate(() => document.activeElement.dataset.game)) === 'ayo' && !pg.url().includes('ayo'));
+    ok('Enter on a SOON cabinet stays put', (await pg.evaluate(() => document.activeElement.dataset.game)) === 'draughts' && !pg.url().includes('draughts'));
     await pg.goto(base);
 
     const real = errs.filter(e => !(!fontThere && /PressStart2P|woff2|404/.test(e)) && !/fonts\.googleapis|fonts\.gstatic|ERR_FAILED|ERR_NAME|ERR_INTERNET|ERR_CONNECTION/.test(e));
@@ -171,18 +176,27 @@ const server = http.createServer((req, res) => {
     await pg.goto(base + 'chess/index.html'); await pg.waitForTimeout(300);
     await pg.goto(base + 'pool/index.html'); await pg.waitForTimeout(300);
     await pg.goto(base + 'scrabble/index.html'); await pg.waitForTimeout(300);
+    await pg.goto(base + 'ayo/index.html'); await pg.waitForTimeout(300);
+    await pg.goto(base + 'connect4/index.html'); await pg.waitForTimeout(300);
+    await pg.goto(base + 'ludo/index.html'); await pg.waitForTimeout(300);
     await ctx.setOffline(true);
     await pg.goto(base);
-    ok('hub loads offline with all six cards', (await pg.$$('.card')).length === 6);
+    ok('hub loads offline with all eight cards', (await pg.$$('.card')).length === 8);
     ok('hub script still works offline', (await pg.textContent('#cr')).length > 0);
     await pg.goto(base + 'chess/index.html');
     ok('chess loads offline', (await pg.$('#cv')) !== null);
     await pg.goto(base + 'pool/index.html');
-    ok('pool loads offline and starts a game', (await pg.$('#bCpu')) !== null && await pg.evaluate(() => { startGame('2p'); return bl.length === 16 && state === 'aim'; }));
+    ok('pool loads offline and racks a game', (await pg.$('#shoot')) !== null && await pg.evaluate(() => { window.__pool.newGame('cpu', 1); return window.__pool.balls.length === 16 && (window.__pool.state === 'place' || window.__pool.state === 'aim'); }));
     await pg.goto(base + 'scrabble/index.html');
     ok('scrabble loads offline with a board', (await pg.$('#bd')) !== null);
     await pg.goto(base + 'scrabble/index.html');
     ok('scrabble loads offline and deals a game', (await pg.$('#bStart')) !== null && await pg.evaluate(() => { newGame(); return P[0].r.length === 7 && bag.length === 86; }));
+    await pg.goto(base + 'connect4/index.html');
+    ok('connect4 loads offline and plays', (await pg.$$('#grid .cell')).length === 42 && await pg.evaluate(() => { document.querySelector('#cols button').click(); return document.querySelectorAll('#grid .disc').length >= 1; }));
+    await pg.goto(base + 'ayo/index.html');
+    ok('ayo loads offline', /ayo/i.test(await pg.title()));
+    await pg.goto(base + 'ludo/index.html');
+    ok('ludo loads offline', /ludo/i.test(await pg.title()));
     await ctx.close();
   }
 
