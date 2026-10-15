@@ -1,6 +1,16 @@
 node_modules
 *.png
 !icon-*.png
+!landscape.png
+!opp-landscape.png
+!themes-pieces.png
+!ladder-landscape.png
+!result-landscape.png
+!pool-1280x800.png
+!pool-740x360.png
+!pool-360x640.png
+!scrabble-1280x800.png
+!scrabble-740x360.png
 *.zip
 .vercel
 dist
