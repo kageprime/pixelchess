@@ -45,7 +45,11 @@ One cross-game chrome, no framework: `shared/shell.js` + `shared/shell.css` (dep
 `pixelarcade.save.<game>` as `{v:1, t, state}`, auto-saved on quit and on `pagehide`, cleared
 on new game and on game over. Corrupt or foreign snapshots fail closed (validated, never
 trusted). The hub shows a CONTINUE PLAYING row from `ArcadeShell.list()` plus catalog search.
-Chess pilots the start-screen template: one PLAY call-to-action, mode cards, secondary rows.
+Chess pilots the start-screen template: an ARCADE EDITION badge, one PLAY call-to-action and a
+compact menu list (mode cards, CONTINUE when a snapshot exists, daily puzzle, online, stats,
+themes, help) plus in-title SETTINGS and CREDITS views toggled with the arrow keys and ESC;
+the settings switches (sound, piece FX, scanlines, commentator, volume) share state with the
+pause screen and persist in the profile.
 Pool's menu and Scrabble's title follow the same template (PLAY, mode cards, CONTINUE);
 the trio's side panels expose PLAY (restarts with the chosen options) with pressed-state modes.
 The hub marks online-capable cabinets with an ONLINE tag (chess today).
@@ -62,7 +66,7 @@ previews in `store.html`. Full design in `PIXEL_ARCADE_MASTER_SPEC.md`.
 
 ## Pixel Chess
 
-Ladder vs Mossback, Lady Vex, Old Dune and secret Nox; daily mate-in-1 puzzles with streaks; blitz clocks; post-game review with evals and blunder marks; tutor mode with verdicts and refutation previews; themes; local + world leaderboards; share cards; YouTube world music; P2P online matches. Carries the arcade profile fields (`xp`, `byGame`, `name`) through its own saves.
+Ladder vs Mossback, Lady Vex, Old Dune and secret Nox; daily mate-in-1 puzzles with streaks; blitz clocks; post-game review with evals and blunder marks; the COMMENTATOR (one settings switch, off by default) calls every move in local modes - a Kibitz headline in the bubble, a full analysis sheet with verdict, threats, plans, traps, concepts and better moves you can preview on the real board with an arrow (it pops itself open and pauses the CPU when you blunder in solo games); themes; local + world leaderboards; share cards; YouTube world music; P2P online matches. Carries the arcade profile fields (`xp`, `byGame`, `name`) through its own saves.
 
 ## Pool (Pixel Pool)
 
@@ -86,7 +90,7 @@ Classic 7x6 four-in-a-row (drop or any-spot placement) vs CPU (easy/normal/hard)
 
 ## Profile
 
-Key `pixelchess.v1`, shared by every game. Chess owns its own fields (`unlocked`, `rec`, `streak`, `bestStreak`, `games`, `total`, `theme`, `top`). The arcade adds `xp`, `byGame` and `name`. Pixel Chess ignores any save whose `v` is not 1, so `v` must stay 1 until chess is updated to read a newer version. Chess carries the arcade fields through its own saves.
+Key `pixelchess.v1`, shared by every game. Chess owns its own fields (`unlocked`, `rec`, `streak`, `bestStreak`, `games`, `total`, `theme`, `top`, `vol`, `cmt`, `crt`). The arcade adds `xp`, `byGame` and `name`. Pixel Chess ignores any save whose `v` is not 1, so `v` must stay 1 until chess is updated to read a newer version. Chess carries the arcade fields through its own saves. Older saves that stored the switch as `tutor` migrate to `cmt` on load.
 
 ## Tests
 
@@ -109,6 +113,9 @@ node scrabble-test.js words: board, scoring, blanks, bingo, word list, swap/pass
 node engine-test.js   rules (perft), SAN, CPU picks and personalities, music tables
 node api-test.js      world leaderboard + signalling API (mocked store)
 node smoke-test.js    phone-size browser smoke test
+node commentary-test.js commentator: motifs, grading bands, teaching text, quips (pure functions)
+node commentator-test.js commentator in a browser: worker analysis, sheet, board preview, AI hold
+node startmenu-test.js chess start menu: settings/credits views, switches, ESC/arrows, persistence
 node ladder-test.js   ladder, unlocks, undo limit, saving (blocked storage too)
 node themes-test.js   themes, profile and leaderboard screens
 node layout-test.js   wide-screen layout test
